@@ -26,19 +26,14 @@ import java.util.stream.Collectors;
 public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illustration> implements IllustrationService {
     private final ThreadPoolTaskExecutor requestExecutor;
 
-    private final String cookie;
-    private final String tt;
-
     /**
      * 作品详情缓存
      */
     private final Map<String, Illustration> illustrationMap = new HashMap<>();
 
-    public IllustrationServiceImpl(ConfigService configService, ThreadPoolTaskExecutor requestExecutor) {
+    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
 
-        cookie = configService.getCookie("pixiv").getValue();
-        tt = configService.getConfig("tt").getValue();
     }
 
     /**
