@@ -74,17 +74,17 @@ public class PixivPost {
     /**
      * 批量查询详情
      *
-     * @param pidSet      pid集合
+     * @param pidCollection      pid集合
      * @param cookie      cookie
      * @param executor    线程池
      * @param progressMap 进度对象
      * @return 详情列表
      */
-    public static List<JSONObject> detail(Set<String> pidSet, String cookie, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
+    public static List<JSONObject> detail(Collection<String> pidCollection, String cookie, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
         List<Callable<JSONObject>> tasks = new ArrayList<>();
         long start = System.currentTimeMillis();
-        log.info("请求作品详情 {} 个", pidSet.size());
-        for (String pid : pidSet) {
+        log.info("请求作品详情 {} 个", pidCollection.size());
+        for (String pid : pidCollection) {
             tasks.add(() -> {
                 JSONObject detail = detail(pid, cookie);
                 addProgress(progressMap);
@@ -452,7 +452,12 @@ public class PixivPost {
      * @param progressMap 进度
      */
     private static void addProgress(Map<String, Integer> progressMap) {
-        progressMap.put("count", progressMap.get("count") + 1);
+        if (progressMap==null) {
+            return;
+        }
+        Integer count = progressMap.get("count");
+        count = count==null?0:count;
+        progressMap.put("count", count + 1);
     }
 
     /**

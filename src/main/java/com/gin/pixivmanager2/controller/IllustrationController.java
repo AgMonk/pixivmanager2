@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author bx002
@@ -24,10 +26,12 @@ public class IllustrationController {
         this.illustrationService = illustrationService;
     }
 
-    @RequestMapping(value = "selectById")
-    public Illustration selectById(@NotEmpty @DecimalMin(value = "1") String id){
-        QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("id",id);
+    @RequestMapping(value = "findOneById")
+    public Illustration findOneById(@NotEmpty @DecimalMin(value = "1") String id){
         return illustrationService.findOneById(id);
+    }
+    @RequestMapping(value = "findListById")
+    public List<Illustration> findListById( String idString){
+        return illustrationService.findList(Arrays.asList(idString.split(",")));
     }
 }

@@ -1,37 +1,43 @@
 package com.gin.pixivmanager2.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gin.pixivmanager2.dao.IllustrationDAO;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.util.PixivPost;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author bx002
  */
+@Slf4j
+@Transactional
 @Service
-public class IllustrationServiceImpl implements IllustrationService {
-    private final IllustrationDAO illustrationDAO;
-    private final ConfigService configService;
+public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illustration> implements IllustrationService {
+    private final ThreadPoolTaskExecutor requestExecutor;
 
     private final String cookie;
-    private final String  tt;
+    private final String tt;
 
     /**
      * 作品详情缓存
      */
     private final Map<String, Illustration> illustrationMap = new HashMap<>();
 
-    public IllustrationServiceImpl(IllustrationDAO illustrationDAO, ConfigService configService) {
-        this.illustrationDAO = illustrationDAO;
-        this.configService = configService;
+    public IllustrationServiceImpl(ConfigService configService, ThreadPoolTaskExecutor requestExecutor) {
+        this.requestExecutor = requestExecutor;
 
-        cookie = configService.getCookie("pixiv").getValue();;
+        cookie = configService.getCookie("pixiv").getValue();
         tt = configService.getConfig("tt").getValue();
     }
 
@@ -45,15 +51,16 @@ public class IllustrationServiceImpl implements IllustrationService {
     public Illustration findOneById(String id) {
         Illustration ill = illustrationMap.get(id);
         if (ill == null) {
-            ill = illustrationDAO.selectById(id);
+            ill = getById(id);
         }
-        if (ill==null ) {
+        long l = 30L * 24 * 60 * 60 * 1000;
+        if (needUpdate(ill)) {
             JSONObject detail = PixivPost.detail(id, null);
-            if (detail!=null) {
+            if (detail != null) {
                 ill = Illustration.parse(detail);
+                save(ill);
             }
         }
-
         illustrationMap.put(id, ill);
         return ill;
     }
@@ -61,22 +68,55 @@ public class IllustrationServiceImpl implements IllustrationService {
     /**
      * 根据多个id查询作品
      *
-     * @param idIn
+     * @param ids
      * @return
      */
     @Override
-    public List<Illustration> findIDin(Collection<String> idIn) {
-        return null;
+    public List<Illustration> findList(Collection<String> ids) {
+        //查询缓存
+        List<Illustration> cachedList =
+                illustrationMap.keySet().stream()
+                        .filter(ids::contains)
+                        .map(illustrationMap::get)
+                        .filter(i -> !needUpdate(i))
+                        .collect(Collectors.toList());
+        List<String> cachedIds = cachedList.stream().map(Illustration::getId).collect(Collectors.toList());
+
+        List<String> lackList = ids.stream().filter(id -> !cachedIds.contains(id)).collect(Collectors.toList());
+        if (lackList.size() > 0) {
+            //查询数据库
+            QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
+            queryWrapper.in("id", lackList);
+            List<Illustration> daoList = list(queryWrapper);
+            //放入缓存
+            daoList.stream().filter(i -> !needUpdate(i)).forEach(i -> {
+                illustrationMap.put(i.getId(), i);
+                cachedList.add(i);
+                lackList.remove(i.getId());
+            });
+        }
+        if (lackList.size() > 0) {
+            List<Illustration> list = PixivPost.detail(lackList, null, requestExecutor, new HashMap<>()).stream()
+                    .map(Illustration::parse)
+                    .collect(Collectors.toList());
+            cachedList.addAll(list);
+            list.forEach(i -> illustrationMap.put(i.getId(), i));
+            saveOrUpdateBatch(list);
+        }
+
+
+        return cachedList;
     }
 
+
     /**
-     * 保存一个作品
+     * 作品是否需要通过请求更新数据
      *
-     * @param collection
+     * @param ill
      * @return
      */
-    @Override
-    public Integer save(Collection<Illustration> collection) {
-        return null;
+    private static boolean needUpdate(Illustration ill) {
+        long l = 30L * 24 * 60 * 60 * 1000;
+        return ill == null || ill.getDownloaded() == 0 || System.currentTimeMillis() - ill.getLastUpdate() > l;
     }
 }

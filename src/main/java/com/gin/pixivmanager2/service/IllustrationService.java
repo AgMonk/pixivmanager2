@@ -1,5 +1,6 @@
 package com.gin.pixivmanager2.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.gin.pixivmanager2.entity.Illustration;
 
 import java.util.Collection;
@@ -8,9 +9,10 @@ import java.util.List;
 /**
  * @author bx002
  */
-public interface IllustrationService {
+public interface IllustrationService extends IService<Illustration> {
     /**
      * 根据id查询一个作品
+     *
      * @param id
      * @return
      */
@@ -18,17 +20,11 @@ public interface IllustrationService {
 
     /**
      * 根据多个id查询作品
-     * @param idIn
+     *
+     * @param ids
      * @return
      */
-    List<Illustration> findIDin(Collection<String> idIn);
+    List<Illustration> findList(Collection<String> ids);
 
-    /**
-     * 保存一个作品
-     * @param collection
-     * @return
-     */
-    Integer save(Collection<Illustration> collection);
-
-
+    
 }

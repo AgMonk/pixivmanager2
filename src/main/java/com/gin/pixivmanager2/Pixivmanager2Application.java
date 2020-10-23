@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableAsync
 @EnableScheduling
-@MapperScan(value = {"com.gin.pixivmanager2.dao"})
+@MapperScan(value = "com.gin.pixivmanager2.dao")
 public class Pixivmanager2Application {
 
     public static void main(String[] args) {
