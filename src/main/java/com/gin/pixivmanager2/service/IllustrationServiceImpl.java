@@ -50,11 +50,11 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
             ill = getById(id);
         }
         long l = 30L * 24 * 60 * 60 * 1000;
-        if (needUpdate(ill)) {
+        if (needUpdate(ill, 0)) {
             JSONObject detail = PixivPost.detail(id, null);
             if (detail != null) {
                 ill = Illustration.parse(detail);
-                save(ill);
+                saveOrUpdate(ill);
             }
         }
         illustrationMap.put(id, ill);
@@ -75,7 +75,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
                 illustrationMap.keySet().stream()
                         .filter(ids::contains)
                         .map(illustrationMap::get)
-                        .filter(i -> !needUpdate(i))
+                        .filter(i -> !needUpdate(i, minBookCount))
                         .collect(Collectors.toList());
         List<String> cachedIds = cachedList.stream().map(Illustration::getId).collect(Collectors.toList());
 
@@ -86,7 +86,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
             queryWrapper.in("id", lackList);
             List<Illustration> daoList = list(queryWrapper);
             //放入缓存
-            daoList.stream().filter(i -> !needUpdate(i)).forEach(i -> {
+            daoList.stream().filter(i -> !needUpdate(i, minBookCount)).forEach(i -> {
                 illustrationMap.put(i.getId(), i);
                 cachedList.add(i);
                 lackList.remove(i.getId());
@@ -111,10 +111,11 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      * 作品是否需要通过请求更新数据
      *
      * @param ill
+     * @param minBookCount
      * @return
      */
-    private static boolean needUpdate(Illustration ill) {
+    private static boolean needUpdate(Illustration ill, Integer minBookCount) {
         long l = 30L * 24 * 60 * 60 * 1000;
-        return ill == null || System.currentTimeMillis() - ill.getLastUpdate() > l;
+        return ill == null || System.currentTimeMillis() - ill.getLastUpdate() > l || ill.getBookmarkCount() < minBookCount;
     }
 }

@@ -36,7 +36,7 @@ public class IllustrationController {
 
     @RequestMapping(value = "findListById")
     public List<Illustration> findListById(String idString) {
-        return illustrationService.findList(Arrays.asList(idString.split(",")), 0);
+        return illustrationService.findList(Arrays.asList(idString.split(",")), 200);
     }
 
     @RequestMapping("test")
