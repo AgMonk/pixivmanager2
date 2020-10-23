@@ -22,9 +22,10 @@ public interface IllustrationService extends IService<Illustration> {
      * 根据多个id查询作品
      *
      * @param ids
+     * @param minBookCount
      * @return
      */
-    List<Illustration> findList(Collection<String> ids);
+    List<Illustration> findList(Collection<String> ids, Integer minBookCount);
 
-    
+
 }

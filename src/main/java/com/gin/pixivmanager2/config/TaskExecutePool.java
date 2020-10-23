@@ -13,7 +13,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class TaskExecutePool {
     @Bean
     public ThreadPoolTaskExecutor requestExecutor() {
-        return TasksUtil.getExecutor("Request-", 10);
+        return TasksUtil.getExecutor("Request", 10);
+    }
+
+    @Bean
+    public ThreadPoolTaskExecutor initExecutor() {
+        return TasksUtil.getExecutor("init", 10);
     }
 
 

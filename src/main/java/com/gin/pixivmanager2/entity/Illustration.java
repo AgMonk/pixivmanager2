@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +96,6 @@ public class Illustration {
      */
     @TableField("bookmarkData")
     Integer bookmarkData;
-    Integer downloaded;
 
     public static Illustration parse(JSONObject body) {
         Illustration ill = new Illustration();
@@ -112,23 +110,22 @@ public class Illustration {
                 .setIllustType(body.getInteger("illustType"))
                 .setBookmarkData(body.get("bookmarkData") != null ? 1 : 0)
                 .setLastUpdate(System.currentTimeMillis())
-                .setDownloaded(0)
         ;
         String description = body.getString("description");
         ill.setDescription(description != null ? description.substring(0, Math.min(4000, description.length())) : null);
 
         JSONObject urlsJson = body.getJSONObject("urls");
-        if (urlsJson!=null) {
+        if (urlsJson != null) {
             String original = urlsJson.getString("original");
 
-            if (ill.getIllustType()==ILLUST_TYPE_GIF) {
-                original=original.replace("img-original", "img-zip-ugoira");
-                original = original.substring(0,original.lastIndexOf("_"))+"_ugoira1920x1080.zip";
+            if (ill.getIllustType() == ILLUST_TYPE_GIF) {
+                original = original.replace("img-original", "img-zip-ugoira");
+                original = original.substring(0, original.lastIndexOf("_")) + "_ugoira1920x1080.zip";
             }
 
             int endIndex = original.lastIndexOf("/") + 1;
             ill.setUrlPrefix(original.substring(0, endIndex))
-            .setFileName(original.substring(endIndex));
+                    .setFileName(original.substring(endIndex));
         }
 
 
@@ -159,11 +156,11 @@ public class Illustration {
     }
 
 
-    public List<String> getUrlList(){
+    public List<String> getUrlList() {
         List<String> list = new ArrayList<>();
-        if (illustType==ILLUST_TYPE_GIF) {
-            list.add(urlPrefix+fileName);
-        }else{
+        if (illustType == ILLUST_TYPE_GIF) {
+            list.add(urlPrefix + fileName);
+        } else {
             for (int i = 0; i < pageCount; i++) {
                 String name = fileName.replace("_p0", "_p" + i);
                 list.add(urlPrefix + name);

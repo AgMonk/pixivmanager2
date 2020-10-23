@@ -34,6 +34,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
     public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor) {
         this.requestExecutor = requestExecutor;
 
+
     }
 
     /**
@@ -64,10 +65,11 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      * 根据多个id查询作品
      *
      * @param ids
+     * @param minBookCount
      * @return
      */
     @Override
-    public List<Illustration> findList(Collection<String> ids) {
+    public List<Illustration> findList(Collection<String> ids, Integer minBookCount) {
         //查询缓存
         List<Illustration> cachedList =
                 illustrationMap.keySet().stream()
@@ -93,6 +95,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         if (lackList.size() > 0) {
             List<Illustration> list = PixivPost.detail(lackList, null, requestExecutor, new HashMap<>()).stream()
                     .map(Illustration::parse)
+                    .filter(i -> i.getBookmarkCount() > minBookCount)
                     .collect(Collectors.toList());
             cachedList.addAll(list);
             list.forEach(i -> illustrationMap.put(i.getId(), i));
@@ -112,6 +115,6 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      */
     private static boolean needUpdate(Illustration ill) {
         long l = 30L * 24 * 60 * 60 * 1000;
-        return ill == null || ill.getDownloaded() == 0 || System.currentTimeMillis() - ill.getLastUpdate() > l;
+        return ill == null || System.currentTimeMillis() - ill.getLastUpdate() > l;
     }
 }
