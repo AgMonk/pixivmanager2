@@ -67,17 +67,17 @@ public class PixivPost {
 
 
         long end = System.currentTimeMillis();
-        log.debug("获得作品详情{} {} 耗时 {} 毫秒", body != null ? "成功" : "失败", pid, Request.timeCost(start, end));
+        log.debug("获得作品详情{} {} 耗时 {}", body != null ? "成功" : "失败", pid, Request.timeCost(start, end));
         return body;
     }
 
     /**
      * 批量查询详情
      *
-     * @param pidCollection      pid集合
-     * @param cookie      cookie
-     * @param executor    线程池
-     * @param progressMap 进度对象
+     * @param pidCollection pid集合
+     * @param cookie        cookie
+     * @param executor      线程池
+     * @param progressMap   进度对象
      * @return 详情列表
      */
     public static List<JSONObject> detail(Collection<String> pidCollection, String cookie, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
@@ -452,11 +452,11 @@ public class PixivPost {
      * @param progressMap 进度
      */
     private static void addProgress(Map<String, Integer> progressMap) {
-        if (progressMap==null) {
+        if (progressMap == null) {
             return;
         }
         Integer count = progressMap.get("count");
-        count = count==null?0:count;
+        count = count == null ? 0 : count;
         progressMap.put("count", count + 1);
     }
 

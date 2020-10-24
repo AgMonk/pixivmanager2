@@ -43,7 +43,7 @@ public class TagServiceImpl implements TagService {
 
         initExecutor.execute(() -> tagFromIllusts = tagFromIllustDAO.selectList(null));
         initExecutor.execute(() -> {
-            tagDAO.selectList(null).forEach(t -> customTranslations.put(t.getName(), t.getTranslation()));
+            tagDAO.selectList(null).forEach(t -> customTranslations.put(t.getName().toLowerCase(), t.getTranslation()));
             Tag.dic = customTranslations;
             Illustration.dic = customTranslations;
         });

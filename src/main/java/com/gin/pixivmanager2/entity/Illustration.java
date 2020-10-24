@@ -9,11 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.Accessors;
+import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +37,23 @@ public class Illustration {
      * 动图
      */
     final static int ILLUST_TYPE_GIF = 2;
+
+    final static String[] USERNAME_TRASH = new String[]{"@", "＠", "|", "FANBOX", "fanbox", "仕事", "■"};
+    final static Map<String, String> ILLEGAL_CHAR = new HashMap<>();
+
+    static {
+        ILLEGAL_CHAR.put(":", "：");
+        ILLEGAL_CHAR.put("\n", "");
+        ILLEGAL_CHAR.put("?", "？");
+        ILLEGAL_CHAR.put("<", "《");
+        ILLEGAL_CHAR.put(">", "》");
+        ILLEGAL_CHAR.put("*", "×");
+        ILLEGAL_CHAR.put("|", "^");
+        ILLEGAL_CHAR.put("\"", "“");
+        ILLEGAL_CHAR.put("\\", "_");
+        ILLEGAL_CHAR.put("/", "~");
+    }
+
 
     /**
      * 作品id pid
@@ -104,10 +119,16 @@ public class Illustration {
     public static Illustration parse(JSONObject body) {
         Illustration ill = new Illustration();
 
+        String userName = body.getString("userName");
+        for (String s : USERNAME_TRASH) {
+            if (userName.contains(s)) {
+                userName = userName.substring(0, userName.indexOf(s));
+            }
+        }
         ill
                 .setId(body.getString("id"))
                 .setUserId(body.getString("userId"))
-                .setUserName(body.getString("userName"))
+                .setUserName(userName)
                 .setTitle(body.getString("title"))
                 .setBookmarkCount(body.getInteger("bookmarkCount"))
                 .setPageCount(body.getInteger("pageCount"))
@@ -162,6 +183,9 @@ public class Illustration {
 
 
     public List<String> getUrlList() {
+        if (StringUtils.isEmpty(urlPrefix) || StringUtils.isEmpty(fileName)) {
+            return null;
+        }
         List<String> list = new ArrayList<>();
         if (illustType == ILLUST_TYPE_GIF) {
             list.add(urlPrefix + fileName);
@@ -176,25 +200,26 @@ public class Illustration {
 
     public String getTagString() {
         return Arrays.stream(tag.split(","))
-                .map(s -> dic.getOrDefault(s, s)).distinct()
+                .map(s -> dic.getOrDefault(s.toLowerCase(), s))
+                .flatMap(s -> Arrays.stream(s.replace(")", "").split("\\(")))
+                .distinct()
                 .collect(Collectors.joining(","));
     }
 
     public String getFilePath(Integer count) {
-        StringBuilder sb = new StringBuilder();
-        sb
-                .append(addBrackets("bmk", bookmarkCount))
-                .append(addBrackets(id, "p" + count))
-                .append(addBrackets("title", title))
-                .append(addBrackets("tags", getTagString()))
-                .append(fileName.substring(fileName.lastIndexOf(".")))
-
-        ;
-        return sb.toString();
+        if (StringUtils.isEmpty(fileName)) {
+            return null;
+        }
+        String sb = addBrackets("bmk", bookmarkCount) +
+                addBrackets(id, "p" + count) +
+                addBrackets("title", title) +
+                addBrackets("tags", getTagString()) +
+                fileName.substring(fileName.lastIndexOf("."));
+        return clean(sb);
     }
 
     public String getParentPath() {
-        return "/" + addBrackets("uid", userId) + addBrackets("user", userName) + "/";
+        return "/" + clean(addBrackets("uid", userId) + addBrackets("user", userName)) + "/";
     }
 
     public List<String> getFilePathList() {
@@ -215,5 +240,12 @@ public class Illustration {
 
     public String getUrlAjax() {
         return "https://www.pixiv.net/ajax/illust/" + id;
+    }
+
+    private String clean(String s) {
+        for (Map.Entry<String, String> entry : ILLEGAL_CHAR.entrySet()) {
+            s = s.replace(entry.getKey(), entry.getValue());
+        }
+        return s;
     }
 }

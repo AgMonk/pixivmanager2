@@ -117,6 +117,9 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      */
     private static boolean needUpdate(Illustration ill, Integer minBookCount) {
         long l = 30L * 24 * 60 * 60 * 1000;
-        return ill == null || System.currentTimeMillis() - ill.getLastUpdate() > l || ill.getBookmarkCount() < minBookCount;
+        return ill == null
+                || ill.getLastUpdate() == null
+                || System.currentTimeMillis() - ill.getLastUpdate() > l
+                || ill.getBookmarkCount() < minBookCount;
     }
 }

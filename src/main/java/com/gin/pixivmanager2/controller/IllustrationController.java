@@ -1,7 +1,7 @@
 package com.gin.pixivmanager2.controller;
 
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.service.FileService;
+import com.gin.pixivmanager2.service.BookmarkServiceImpl;
 import com.gin.pixivmanager2.service.IllustrationService;
 import com.gin.pixivmanager2.util.SpringContextUtil;
 import org.springframework.validation.annotation.Validated;
@@ -39,8 +39,8 @@ public class IllustrationController {
     }
 
     @RequestMapping("test")
-    public void test(String idString) {
-        FileService bean = SpringContextUtil.getBean(FileService.class);
-        bean.download(findList(idString), "未分类");
+    public Object test(String idString) {
+        return SpringContextUtil.getBean(BookmarkServiceImpl.class)
+                .getUntaggedBookmarks();
     }
 }
