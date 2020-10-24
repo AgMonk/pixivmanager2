@@ -44,7 +44,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      * @return
      */
     @Override
-    public Illustration findOneById(String id) {
+    public Illustration find(String id) {
         Illustration ill = illustrationMap.get(id);
         if (ill == null) {
             ill = getById(id);
@@ -58,6 +58,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
             }
         }
         illustrationMap.put(id, ill);
+
         return ill;
     }
 

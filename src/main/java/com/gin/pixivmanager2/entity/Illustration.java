@@ -11,7 +11,10 @@ import lombok.ToString;
 import lombok.experimental.Accessors;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author bx002
@@ -23,6 +26,7 @@ import java.util.List;
 @Accessors(chain = true)
 @TableName(value = "t_illustration")
 public class Illustration {
+    public static Map<String, String> dic;
     /**
      * 插画
      */
@@ -142,7 +146,8 @@ public class Illustration {
                 tagBuilder.append(tagString).append(",");
                 translationBuilder.append(trans != null ? trans.getString("en") : tagString).append(",");
             }
-            ill.setTag(tagBuilder.toString()).setTagTranslated(translationBuilder.toString());
+            ill.setTag(tagBuilder.substring(0, tagBuilder.length() - 1))
+                    .setTagTranslated(translationBuilder.substring(0, translationBuilder.length() - 1));
         } catch (ClassCastException e) {
             //cast错误 说明是简短tags
             JSONArray tagsArray = body.getJSONArray("tags");
@@ -167,5 +172,48 @@ public class Illustration {
             }
         }
         return list;
+    }
+
+    public String getTagString() {
+        return Arrays.stream(tag.split(","))
+                .map(s -> dic.getOrDefault(s, s)).distinct()
+                .collect(Collectors.joining(","));
+    }
+
+    public String getFilePath(Integer count) {
+        StringBuilder sb = new StringBuilder();
+        sb
+                .append(addBrackets("bmk", bookmarkCount))
+                .append(addBrackets(id, "p" + count))
+                .append(addBrackets("title", title))
+                .append(addBrackets("tags", getTagString()))
+                .append(fileName.substring(fileName.lastIndexOf(".")))
+
+        ;
+        return sb.toString();
+    }
+
+    public String getParentPath() {
+        return "/" + addBrackets("uid", userId) + addBrackets("user", userName) + "/";
+    }
+
+    public List<String> getFilePathList() {
+        ArrayList<String> list = new ArrayList<>();
+        for (Integer i = 0; i < pageCount; i++) {
+            list.add(getFilePath(i));
+        }
+        return list;
+    }
+
+    private static String addBrackets(String title, Object content) {
+        return "[" + title + "_" + content + "]";
+    }
+
+    public String getUrl() {
+        return "https://www.pixiv.net/artworks/" + id;
+    }
+
+    public String getUrlAjax() {
+        return "https://www.pixiv.net/ajax/illust/" + id;
     }
 }

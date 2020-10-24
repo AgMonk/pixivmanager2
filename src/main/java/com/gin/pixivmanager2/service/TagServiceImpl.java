@@ -2,6 +2,7 @@ package com.gin.pixivmanager2.service;
 
 import com.gin.pixivmanager2.dao.TagDAO;
 import com.gin.pixivmanager2.dao.TagFromIllustDAO;
+import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.entity.Tag;
 import com.gin.pixivmanager2.entity.TagFromIllust;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class TagServiceImpl implements TagService {
         initExecutor.execute(() -> {
             tagDAO.selectList(null).forEach(t -> customTranslations.put(t.getName(), t.getTranslation()));
             Tag.dic = customTranslations;
+            Illustration.dic = customTranslations;
         });
     }
 

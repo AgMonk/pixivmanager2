@@ -1,9 +1,8 @@
 package com.gin.pixivmanager2.controller;
 
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.entity.Tag;
+import com.gin.pixivmanager2.service.FileService;
 import com.gin.pixivmanager2.service.IllustrationService;
-import com.gin.pixivmanager2.service.TagServiceImpl;
 import com.gin.pixivmanager2.util.SpringContextUtil;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,19 +28,19 @@ public class IllustrationController {
         this.illustrationService = illustrationService;
     }
 
-    @RequestMapping(value = "findOneById")
-    public Illustration findOneById(@NotEmpty @DecimalMin(value = "1") String id) {
-        return illustrationService.findOneById(id);
+    @RequestMapping(value = "find")
+    public Illustration find(@NotEmpty @DecimalMin(value = "1") String id) {
+        return illustrationService.find(id);
     }
 
-    @RequestMapping(value = "findListById")
-    public List<Illustration> findListById(String idString) {
+    @RequestMapping(value = "findList")
+    public List<Illustration> findList(String idString) {
         return illustrationService.findList(Arrays.asList(idString.split(",")), 200);
     }
 
     @RequestMapping("test")
-    public List<Tag> test() {
-        TagServiceImpl bean = SpringContextUtil.getBean(TagServiceImpl.class);
-        return bean.count(5, 10, false);
+    public void test(String idString) {
+        FileService bean = SpringContextUtil.getBean(FileService.class);
+        bean.download(findList(idString), "未分类");
     }
 }

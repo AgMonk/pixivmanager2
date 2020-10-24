@@ -16,7 +16,7 @@ public interface IllustrationService extends IService<Illustration> {
      * @param id
      * @return
      */
-    Illustration findOneById(String id);
+    Illustration find(String id);
 
     /**
      * 根据多个id查询作品
