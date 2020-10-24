@@ -466,6 +466,9 @@ public class PixivPost {
      * @param progressMap 进度
      */
     private static void completeProgress(Map<String, Integer> progressMap) {
+        if (progressMap == null) {
+            return;
+        }
         progressMap.put("count", progressMap.get("size"));
     }
 

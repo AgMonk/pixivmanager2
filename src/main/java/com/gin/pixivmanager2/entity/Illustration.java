@@ -200,7 +200,7 @@ public class Illustration {
 
     public String getTagString() {
         return Arrays.stream(tag.split(","))
-                .map(s -> dic.getOrDefault(s.toLowerCase(), s))
+                .map(s -> dic.getOrDefault(s.toLowerCase(), s).toLowerCase())
                 .flatMap(s -> Arrays.stream(s.replace(")", "").split("\\(")))
                 .distinct()
                 .collect(Collectors.joining(","));

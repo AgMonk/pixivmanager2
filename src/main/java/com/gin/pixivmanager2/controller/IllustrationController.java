@@ -40,7 +40,9 @@ public class IllustrationController {
 
     @RequestMapping("test")
     public Object test(String idString) {
-        return SpringContextUtil.getBean(BookmarkServiceImpl.class)
-                .getUntaggedBookmarks();
+        SpringContextUtil.getBean(BookmarkServiceImpl.class)
+                .downloadUntaggedBookmarks();
+
+        return null;
     }
 }

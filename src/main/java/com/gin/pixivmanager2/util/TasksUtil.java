@@ -42,10 +42,12 @@ public class TasksUtil {
                 //把执行结果放入List
                 resultList.add(result);
 
-            } catch (ExecutionException | TimeoutException | InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 // 执行失败或超时时取消任务
                 future.cancel(true);
                 e.printStackTrace();
+            } catch (TimeoutException ignored) {
+
             }
         }
         //任务执行完毕 且 已取消未完成任务

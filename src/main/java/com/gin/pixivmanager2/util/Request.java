@@ -506,8 +506,11 @@ public class Request {
 
 
             } catch (RuntimeException e) {
-                log.warn(e.getMessage());
-                e.printStackTrace();
+                String message = e.getMessage();
+                log.warn(message);
+                if (!message.contains("302")) {
+                    e.printStackTrace();
+                }
                 break;
             } catch (SocketTimeoutException e) {
                 if (maxTimes == i + 1) {
