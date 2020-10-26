@@ -5,5 +5,5 @@ import com.gin.pixivmanager2.entity.NgaId;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface NgaIDDAO extends BaseMapper<NgaId> {
+public interface NgaIdDAO extends BaseMapper<NgaId> {
 }

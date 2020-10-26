@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
+    <meta charset="UTF-8">
+    <title>网页标题</title>
+    <script type="text/javascript" src="/js/vue.js"></script>
+    <script type="text/javascript" src="/js/axios.min.js"></script>
+    <script type="text/javascript" src="/js/queryString.js"></script>
+    <script type="text/javascript">
+
+    </script>
+    <style type="text/css">
+        .err {
+            color: red;
+        }
+
+        input {
+            width: 100px;
+        }
+
+        .imgSmall {
+            width: 25%;
+        }
+
+        .imgMedium {
+            width: 33%;
+        }
+
+        .imgLarge {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div v-if="width<=800" style="position: fixed">
+        <select v-model="path" multiple="multiple">
+            <option v-for="(v,k,i) in fileMap" :value="k">{{k}}</option>
+        </select>
+
+    </div>
+    <img v-if="width<=800" v-for="pid in path" :src="encodeURI(fileMap[pid])" style="width: 100%">
+
+    <div v-if="width>800"><img v-for="pid in path" :src="encodeURI(fileMap[pid])"
+                               :class="width > 1200 ? 'imgSmall' : width>1000?'imgMedium':'imgLarge'"
+                               @click.left="clickLeft(pid)"
+                               @click.prevent.right="clickRight(pid)"></div>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            width: 1000,
+            path: [],
+            fileMap: {},
+        },
+        methods: {
+            getUntagged() {
+                get("/ill/getUntagged", null, function (res) {
+                    _this.fileMap = res.data;
+                    _this.width = window.innerWidth;
+                    if (_this.width > 800) {
+                        _this.path = Object.keys(res.data);
+                    } else {
+                        _this.path = [Object.keys(res.data)[0]];
+                    }
+                    console.log(res.data);
+                })
+            },
+            clickLeft(pid) {
+                window.open(encodeURI(this.fileMap[pid]))
+            },
+            clickRight(pid) {
+                alert(pid);
+            }
+        },
+        created() {
+            this.getUntagged();
+
+            setInterval(function () {
+                _this.width = window.innerWidth
+            }, 200)
+
+
+        },
+    });
+    const _this = app;
+</script>
+</html>
+

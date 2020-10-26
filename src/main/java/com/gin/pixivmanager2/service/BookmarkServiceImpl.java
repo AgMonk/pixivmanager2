@@ -8,9 +8,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,9 +42,9 @@ public class BookmarkServiceImpl implements BookmarkService {
         fileService.download(list, "未分类");
 
         //收藏
-        Map<String, String> pidAndTags = new HashMap<>();
-        list.forEach(i -> pidAndTags.put(i.getId(), i.getTagString()));
-        PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, null);
+//        Map<String, String> pidAndTags = new HashMap<>();
+//        list.forEach(i -> pidAndTags.put(i.getId(), i.getTagString()));
+//        PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, null);
 
     }
 }

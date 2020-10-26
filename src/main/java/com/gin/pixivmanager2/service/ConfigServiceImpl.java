@@ -1,34 +1,36 @@
 package com.gin.pixivmanager2.service;
 
 import com.gin.pixivmanager2.dao.ConfigDAO;
-import com.gin.pixivmanager2.dao.NgaIDDAO;
+import com.gin.pixivmanager2.dao.NgaIdDAO;
 import com.gin.pixivmanager2.entity.Config;
 import com.gin.pixivmanager2.entity.NgaId;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * @author bx002
+ */
 @Slf4j
 @Service
 public class ConfigServiceImpl implements ConfigService {
     private final ConfigDAO configDAO;
-    private final NgaIDDAO  ngaIDDAO;
+    private final NgaIdDAO ngaIdDAO;
 
     private final List<Config> configList;
     private final List<NgaId> ngaIdList;
 
-    public ConfigServiceImpl(ConfigDAO configDAO, NgaIDDAO ngaIDDAO) {
+    public ConfigServiceImpl(ConfigDAO configDAO, NgaIdDAO ngaIdDAO) {
         this.configDAO = configDAO;
-        this.ngaIDDAO = ngaIDDAO;
+        this.ngaIdDAO = ngaIdDAO;
 
         configList = configDAO.selectList(null);
-        ngaIdList = ngaIDDAO.selectList(null);
+        ngaIdList = ngaIdDAO.selectList(null);
 
-        configList.forEach(c->log.debug("载入配置[{}] {} -> {}",c.getType(),c.getName(),c.getValue().substring(0,Math.min(50,c.getValue().length()))));
-        ngaIdList.forEach(n->log.debug("载入ngaId [{}] {} -> {}",n.getType(),n.getName(),n.getId()));
+        configList.forEach(c -> log.debug("载入配置[{}] {} -> {}", c.getType(), c.getName(), c.getValue().substring(0, Math.min(50, c.getValue().length()))));
+        ngaIdList.forEach(n -> log.debug("载入ngaId [{}] {} -> {}", n.getType(), n.getName(), n.getId()));
     }
 
 

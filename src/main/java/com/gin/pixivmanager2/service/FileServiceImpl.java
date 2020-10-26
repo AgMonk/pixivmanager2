@@ -58,6 +58,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         return list.stream();
     }
 
+    @Override
     public Map<String, File> getFileMap(String type) {
         HashMap<String, File> map = new HashMap<>();
         log.info("获取文件列表 {}", type);
