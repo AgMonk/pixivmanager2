@@ -219,7 +219,7 @@ public class Illustration {
     }
 
     public String getParentPath() {
-        return "/" + clean(addBrackets("uid", userId) + addBrackets("user", userName)) + "/";
+        return "/" + clean(addBrackets("u", userName)) + addBrackets("uid", userId) + "/";
     }
 
     public List<String> getFilePathList() {

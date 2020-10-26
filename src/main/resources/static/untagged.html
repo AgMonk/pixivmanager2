@@ -35,18 +35,22 @@
 </head>
 <body>
 <div id="app">
-    <div v-if="width<=800" style="position: fixed">
+    <div style="position: fixed">
         <select v-model="path" multiple="multiple">
             <option v-for="(v,k,i) in fileMap" :value="k">{{k}}</option>
         </select>
 
     </div>
-    <img v-if="width<=800" v-for="pid in path" :src="encodeURI(fileMap[pid])" style="width: 100%">
+    <div v-if="width<=800">
+        <img v-for="pid in path" :src="encodeURI(fileMap[pid])" style="width: 100%">
+    </div>
 
-    <div v-if="width>800"><img v-for="pid in path" :src="encodeURI(fileMap[pid])"
-                               :class="width > 1200 ? 'imgSmall' : width>1000?'imgMedium':'imgLarge'"
-                               @click.left="clickLeft(pid)"
-                               @click.prevent.right="clickRight(pid)"></div>
+    <div v-if="width>800">
+        <img v-for="pid in path" :src="encodeURI(fileMap[pid])"
+             :class="width > 1200 ? 'imgSmall' : width>1000?'imgMedium':'imgLarge'"
+             @click.left="clickLeft(pid)"
+             @click.prevent.right="del([pid])">
+    </div>
 </div>
 </body>
 <script>
@@ -59,7 +63,7 @@
         },
         methods: {
             getUntagged() {
-                get("/ill/getUntagged", null, function (res) {
+                get("/file/getUntagged", null, function (res) {
                     _this.fileMap = res.data;
                     _this.width = window.innerWidth;
                     if (_this.width > 800) {
@@ -75,7 +79,27 @@
             },
             clickRight(pid) {
                 alert(pid);
-            }
+            },
+            del(s) {
+                console.log("删除： " + s)
+                for (let i = 0; i < s.length; i++) {
+                    Vue.delete(_this.fileMap, s[i])
+                    _this.path = [Object.keys(_this.fileMap)[0]];
+                }
+                get("/file/del", {pid: s.toString()}, function (res) {
+                    console.log(res.data)
+                })
+            },
+            archive(s) {
+                console.log("归档： " + s)
+                for (let i = 0; i < s.length; i++) {
+                    Vue.delete(_this.fileMap, s[i])
+                    _this.path = [Object.keys(_this.fileMap)[0]];
+                }
+                get("/file/archive", {pid: s.toString()}, function (res) {
+                    console.log(res.data)
+                })
+            },
         },
         created() {
             this.getUntagged();
@@ -84,6 +108,19 @@
                 _this.width = window.innerWidth
             }, 200)
 
+            document.onkeypress = function (e) {
+                console.log(e.key + " " + e.keyCode)
+
+                if (e.keyCode === 100) {
+                    //删除
+                    _this.del(_this.path)
+                }
+
+                if (e.keyCode === 97) {
+                    //归档
+                    _this.archive(_this.path)
+                }
+            }
 
         },
     });
