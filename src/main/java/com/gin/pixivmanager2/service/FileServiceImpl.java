@@ -199,7 +199,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         }
                     }
                 }
-                map.put(group, file);
+                if (!file.getPath().endsWith("zip")) {
+                    map.put(group, file);
+                }
             }
         }
     }

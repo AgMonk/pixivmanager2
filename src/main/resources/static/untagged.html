@@ -21,7 +21,7 @@
         }
 
         .imgSmall {
-            width: 25%;
+            width: 24%;
         }
 
         .imgMedium {
@@ -84,7 +84,8 @@
                 console.log("删除： " + s)
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
-                    _this.path = [Object.keys(_this.fileMap)[0]];
+                    let a =Object.keys(_this.fileMap);
+                    _this.path =[a[0],a[1],a[2],a[3]];
                 }
                 get("/file/del", {pid: s.toString()}, function (res) {
                     console.log(res.data)
@@ -94,7 +95,8 @@
                 console.log("归档： " + s)
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
-                    _this.path = [Object.keys(_this.fileMap)[0]];
+                    let a =Object.keys(_this.fileMap);
+                    _this.path =[a[0],a[1],a[2],a[3]];
                 }
                 get("/file/archive", {pid: s.toString()}, function (res) {
                     console.log(res.data)
