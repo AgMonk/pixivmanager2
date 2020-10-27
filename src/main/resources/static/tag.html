@@ -62,18 +62,17 @@
         <tr>
             <th>序号</th>
             <th style="width: 30%">TAG
-                <input type="text" v-model="paramTag.keyword" placeholder="关键字" @keypress.enter="getTags()"
+                <input type="text" v-model="paramTag.keyword" placeholder="关键字" @keypress.enter="count()"
                        style="width: 70%">
-                <button @click="getTags()">查询</button>
+                <button @click="count()">查询</button>
 
             </th>
             <th>翻译 &nbsp;&nbsp;&nbsp;
                 <input type="text" v-model="paramTag.page" placeholder="页数" style="width: 50px;"
-                       @keypress.enter="getTags()">
-                <input type="text" v-model="paramTag.limit" placeholder="每页数量" style="width: 50px;">
+                       @keypress.enter="count()">
 
-                <button @click="paramTag.page-=1;paramTag.page=Math.max(paramTag.page,1);getTags()">上一页</button>
-                <button @click="paramTag.page-=-1;getTags()">下一页</button>
+                <button @click="paramTag.page-=1;paramTag.page=Math.max(paramTag.page,1);count()">上一页</button>
+                <button @click="paramTag.page-=-1;count()">下一页</button>
                 <label><input type="checkbox" v-model="paramTag.all">全部</label>
             </th>
             <th>自定义翻译
@@ -83,7 +82,7 @@
         <tr v-for="(item,i) in tags " :class="i%2===1?'alt':null">
             <td>{{i}}</td>
             <td>
-                <button @click="addTranslation(item.name,item.name)">使用</button>
+                <button @click="setTranslation(item.name,item.name)">使用</button>
                 <a target="_blank"
                    :href="'https://www.pixiv.net/tags/'+item.name+'/artworks?s_mode=s_tag'">{{item.name}}({{item.count}})</a>
                 <a target="_blank"
@@ -91,16 +90,16 @@
 
             </td>
             <td>
-                <button @click="addTranslation(item.name,item.translation)">使用</button>
+                <button @click="setTranslation(item.name,item.translation)">使用</button>
                 {{item.translation}}
                 <a target="_blank"
                    :href="'https://translate.google.cn/#view=home&op=translate&sl=ja&tl=zh-CN&text='+item.translation">翻译</a>
 
             </td>
             <td>
-                <button @click="addTranslation(item.name,item.customTranslation)">使用</button>
+                <button @click="setTranslation(item.name,item.customTranslation)">使用</button>
                 <input type="text" v-model="item.customTranslation"
-                       @keypress.enter="addTranslation(item.name,item.customTranslation)">
+                       @keypress.enter="setTranslation(item.name,item.customTranslation)">
             </td>
         </tr>
 
@@ -126,9 +125,9 @@
                     console.log(res.data.data)
                 })
             },
-            addTranslation(n, t) {
-                get("pixiv/addTranslation", {name: n, translation: t}, function (res) {
-                    _this.getTags();
+            setTranslation(n, t) {
+                get("/tag/setTranslation", {name: n, translation: t}, function () {
+                    _this.count();
                 })
             },
         },

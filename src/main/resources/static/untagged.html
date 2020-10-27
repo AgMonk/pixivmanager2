@@ -39,7 +39,10 @@
         <select v-model="path" multiple="multiple">
             <option v-for="(v,k,i) in fileMap" :value="k">{{k}}</option>
         </select>
-
+        <button @click="archive()">归档</button>
+        <br>
+        <button @click="del()">删除</button>
+        <br>
     </div>
     <div v-if="width<=800">
         <img v-for="pid in path" :src="encodeURI(fileMap[pid])" style="width: 100%">
@@ -49,7 +52,7 @@
         <img v-for="pid in path" :src="encodeURI(fileMap[pid])"
              :class="width > 1200 ? 'imgSmall' : width>1000?'imgMedium':'imgLarge'"
              @click.left="clickLeft(pid)"
-             @click.prevent.right="del([pid])">
+             @click.prevent.right="clickRight(pid)">
     </div>
 </div>
 </body>
@@ -78,30 +81,41 @@
                 window.open(encodeURI(this.fileMap[pid]))
             },
             clickRight(pid) {
-                alert(pid);
+                this.remove(pid);
             },
-            del(s) {
+            del() {
+                let s = _this.path;
                 console.log("删除： " + s)
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
-                    let a =Object.keys(_this.fileMap);
-                    _this.path =[a[0],a[1],a[2],a[3]];
+                    let a = Object.keys(_this.fileMap);
+                    _this.path = [a[0], a[1], a[2], a[3]];
                 }
                 get("/file/del", {pid: s.toString()}, function (res) {
                     console.log(res.data)
                 })
             },
-            archive(s) {
+            archive() {
+                let s = _this.path;
                 console.log("归档： " + s)
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
-                    let a =Object.keys(_this.fileMap);
-                    _this.path =[a[0],a[1],a[2],a[3]];
+                    let a = Object.keys(_this.fileMap);
+                    _this.path = [a[0], a[1], a[2], a[3]];
                 }
                 get("/file/archive", {pid: s.toString()}, function (res) {
                     console.log(res.data)
                 })
             },
+            remove(pid) {
+                if (this.path.includes(pid)) {
+                    let i = this.path.indexOf(pid);
+                    this.path.splice(i, 1);
+                } else {
+                    this.path.push(pid);
+                }
+                console.log(this.path)
+            }
         },
         created() {
             this.getUntagged();
@@ -111,16 +125,16 @@
             }, 200)
 
             document.onkeypress = function (e) {
-                console.log(e.key + " " + e.keyCode)
+                console.log(e)
 
                 if (e.keyCode === 100) {
                     //删除
-                    _this.del(_this.path)
+                    _this.del()
                 }
 
                 if (e.keyCode === 97) {
                     //归档
-                    _this.archive(_this.path)
+                    _this.archive()
                 }
             }
 

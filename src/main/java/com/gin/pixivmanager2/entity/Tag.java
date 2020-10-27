@@ -1,6 +1,8 @@
 package com.gin.pixivmanager2.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,7 +20,7 @@ import java.util.Map;
 @TableName(value = "t_tags_translation")
 public class Tag {
     public static Map<String, String> dic;
-
+    @TableId(type = IdType.AUTO)
     String id;
     String name;
     String translation;

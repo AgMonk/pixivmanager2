@@ -32,4 +32,10 @@ public class TagController {
         return new Res<>(2000, "统计Tag成功", count);
     }
 
+    @RequestMapping("setTranslation")
+    public Res<Void> setTranslation(Tag tag) {
+        tagService.setTranslation(tag);
+        return new Res<>(2000, "添加翻译成功 " + tag.getName() + " >> " + tag.getTranslation(), null);
+
+    }
 }

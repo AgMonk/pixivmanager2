@@ -1,10 +1,12 @@
 package com.gin.pixivmanager2.service;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gin.pixivmanager2.dao.TagDAO;
 import com.gin.pixivmanager2.dao.TagFromIllustDAO;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.entity.Tag;
 import com.gin.pixivmanager2.entity.TagFromIllust;
+import com.gin.pixivmanager2.util.PixivPost;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -23,10 +25,14 @@ import java.util.stream.Stream;
 @Slf4j
 @Transactional
 @Service
-public class TagServiceImpl implements TagService {
+public class TagServiceImpl extends ServiceImpl<TagDAO, Tag> implements TagService {
+    private final ThreadPoolTaskExecutor requestExecutor;
     private final TagFromIllustDAO tagFromIllustDAO;
     private final ThreadPoolTaskExecutor initExecutor;
     private final TagDAO tagDAO;
+
+    private final String cookie;
+    private final String tt;
     Map<String, Tag> tagMap;
     /**
      * 从作品详情中获取的tag及其原生翻译
@@ -38,10 +44,17 @@ public class TagServiceImpl implements TagService {
     private final Map<String, String> customTranslations = new HashMap<>();
 
 
-    public TagServiceImpl(TagFromIllustDAO tagFromIllustDAO, ThreadPoolTaskExecutor initExecutor, TagDAO tagDAO) {
+    public TagServiceImpl(ThreadPoolTaskExecutor requestExecutor,
+                          TagFromIllustDAO tagFromIllustDAO,
+                          ThreadPoolTaskExecutor initExecutor,
+                          TagDAO tagDAO,
+                          ConfigService configService) {
+        this.requestExecutor = requestExecutor;
         this.tagFromIllustDAO = tagFromIllustDAO;
         this.initExecutor = initExecutor;
         this.tagDAO = tagDAO;
+        cookie = configService.getCookie("pixiv").getValue();
+        tt = configService.getConfig("tt").getValue();
 
         initExecutor.execute(() -> {
             tagFromIllusts = tagFromIllustDAO.selectList(null);
@@ -67,6 +80,18 @@ public class TagServiceImpl implements TagService {
                 .skip(offset)
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 设置翻译
+     *
+     * @param tag
+     */
+    @Override
+    public void setTranslation(Tag tag) {
+        saveOrUpdate(tag);
+        tagMap.remove(tag.getName());
+        requestExecutor.execute(() -> PixivPost.setTag(cookie, tt, tag.getName(), tag.getTranslation()));
     }
 
     @Scheduled(cron = "0 0/5 * * * ?")

@@ -48,7 +48,7 @@ public class FileController {
     public Map<String, String> getUntagged() {
         Map<String, File> untagged = fileService.getFileMap("未分类");
         String rootPath = SpringContextUtil.getBean(ConfigService.class).getPath("rootPath").getValue();
-        Map<String, String> map = new TreeMap<>((s1, s2) -> {
+        TreeMap<String, String> map = new TreeMap<>((s1, s2) -> {
             if (!s1.contains("_p") || !s2.contains("_p")) {
                 return s1.compareTo(s2);
             } else {
@@ -67,6 +67,10 @@ public class FileController {
             map.put(k, replace);
 
         });
+
+        while (map.size() > 50) {
+            map.pollLastEntry();
+        }
 
         return map;
     }

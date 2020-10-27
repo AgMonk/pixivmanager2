@@ -6,4 +6,11 @@ import java.util.List;
 
 public interface TagService {
     List<Tag> count(Integer offset, String keyword, Integer limit, boolean all);
+
+    /**
+     * 设置翻译
+     *
+     * @param tag
+     */
+    void setTranslation(Tag tag);
 }
