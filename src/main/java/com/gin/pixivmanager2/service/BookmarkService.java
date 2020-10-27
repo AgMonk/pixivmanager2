@@ -5,4 +5,5 @@ package com.gin.pixivmanager2.service;
  */
 public interface BookmarkService {
 
+    void downloadUntaggedBookmarks();
 }

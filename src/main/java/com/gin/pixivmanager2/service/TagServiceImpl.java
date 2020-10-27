@@ -6,6 +6,7 @@ import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.entity.Tag;
 import com.gin.pixivmanager2.entity.TagFromIllust;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class TagServiceImpl implements TagService {
     private final TagFromIllustDAO tagFromIllustDAO;
     private final ThreadPoolTaskExecutor initExecutor;
     private final TagDAO tagDAO;
+    Map<String, Tag> tagMap;
     /**
      * 从作品详情中获取的tag及其原生翻译
      */
@@ -41,7 +43,10 @@ public class TagServiceImpl implements TagService {
         this.initExecutor = initExecutor;
         this.tagDAO = tagDAO;
 
-        initExecutor.execute(() -> tagFromIllusts = tagFromIllustDAO.selectList(null));
+        initExecutor.execute(() -> {
+            tagFromIllusts = tagFromIllustDAO.selectList(null);
+            updateTagMap();
+        });
         initExecutor.execute(() -> {
             tagDAO.selectList(null).forEach(t -> customTranslations.put(t.getName().toLowerCase(), t.getTranslation()));
             Tag.dic = customTranslations;
@@ -49,8 +54,24 @@ public class TagServiceImpl implements TagService {
         });
     }
 
-    public List<Tag> count(Integer offset, Integer limit, boolean all) {
-        Map<String, Tag> tagMap = new HashMap<>();
+    @Override
+    public List<Tag> count(Integer offset, String keyword, Integer limit, boolean all) {
+        Stream<Tag> stream = tagMap.values().stream()
+                .filter(tag -> tag.getName().toLowerCase().contains(keyword)
+                        || tag.getTranslation().toLowerCase().contains(keyword));
+        if (!all) {
+            stream = stream.filter(t -> !customTranslations.containsKey(t.getName().toLowerCase()));
+        }
+        return stream
+                .sorted((o1, o2) -> o2.getCount() - o1.getCount())
+                .skip(offset)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    @Scheduled(cron = "0 0/5 * * * ?")
+    public void updateTagMap() {
+        tagMap = new HashMap<>();
         tagFromIllusts.forEach(t -> {
             t.getTagList().forEach(tt -> {
                 Tag tag = tagMap.get(tt.getName());
@@ -61,11 +82,5 @@ public class TagServiceImpl implements TagService {
                 tag.add();
             });
         });
-
-        Stream<Tag> stream = tagMap.values().stream();
-        if (!all) {
-            stream = stream.filter(t -> !customTranslations.containsKey(t.getName()));
-        }
-        return stream.sorted((o1, o2) -> o2.getCount() - o1.getCount()).skip(offset).limit(limit).collect(Collectors.toList());
     }
 }

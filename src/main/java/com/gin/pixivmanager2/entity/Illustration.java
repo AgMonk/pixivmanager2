@@ -218,7 +218,7 @@ public class Illustration {
         return clean(sb);
     }
 
-    public String getParentPath() {
+    public String getAuthorPath() {
         return "/" + clean(addBrackets("u", userName)) + addBrackets("uid", userId) + "/";
     }
 

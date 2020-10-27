@@ -88,7 +88,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         illustrationList.forEach(i -> {
             pidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
                 String count = s.substring(s.indexOf("_p") + 2);
-                String destPath = archivePath + "/" + i.getIllustType() + i.getParentPath() + i.getFilePath(Integer.valueOf(count));
+                String destPath = archivePath + "/" + i.getIllustType() + i.getAuthorPath() + i.getFilePath(Integer.valueOf(count));
                 File destFile = new File(destPath);
                 File srcFile = fileMap.get(s);
 
@@ -96,6 +96,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                     if (destFile.length() == srcFile.length()) {
                         if (srcFile.delete()) {
                             log.info("目标文件存在且与源文件大小相同 删除源文件");
+                            return;
                         }
                     } else {
                         while (destFile.exists()) {
