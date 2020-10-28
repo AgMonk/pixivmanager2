@@ -22,6 +22,11 @@ public class TaskExecutePool {
     }
 
     @Bean
+    public ThreadPoolTaskExecutor defaultExecutor() {
+        return TasksUtil.getExecutor("default", 1);
+    }
+
+    @Bean
     public ThreadPoolTaskExecutor downloadExecutor() {
         return TasksUtil.getExecutor("download", 10);
     }

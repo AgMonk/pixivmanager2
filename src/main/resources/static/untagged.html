@@ -39,8 +39,9 @@
         <select v-model="path" multiple="multiple">
             <option v-for="(v,k,i) in fileMap" :value="k">{{k}}</option>
         </select>
+        <br><br>
         <button @click="archive()">归档</button>
-        <br>
+        <br><br><br>
         <button @click="del()">删除</button>
         <br>
     </div>
@@ -70,7 +71,8 @@
                     _this.fileMap = res.data;
                     _this.width = window.innerWidth;
                     if (_this.width > 800) {
-                        _this.path = Object.keys(res.data);
+                        let a = Object.keys(_this.fileMap);
+                        _this.path = [a[0], a[1], a[2], a[3]];
                     } else {
                         _this.path = [Object.keys(res.data)[0]];
                     }

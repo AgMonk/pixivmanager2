@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
+    <meta charset="UTF-8">
+    <title>网页标题</title>
+    <script type="text/javascript" src="/js/vue.js"></script>
+    <script type="text/javascript" src="/js/axios.min.js"></script>
+    <script type="text/javascript" src="/js/queryString.js"></script>
+    <link rel="stylesheet" href="/css/tableCss.css">
+    <style type="text/css">
+        .err {
+            color: red;
+        }
+
+        input {
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <button @click="downloadUntagged()">下载未分类</button>
+    <table class="customers">
+        <tr>
+            <th colspan="10">下载进度</th>
+        </tr>
+        <tr>
+            <td>ID</td>
+            <td>进度</td>
+            <td>百分比</td>
+        </tr>
+        <tr v-for="(img,i) in downloadingFileList" :class="i%2===0?'alt':null">
+            <td><a :href="img.sourceUrl" target="_blank">({{img.progress.times}}){{img.pidCount}}</a></td>
+            <td>{{img.percentSize}}</td>
+            <td>{{img.percent}}%</td>
+        </tr>
+    </table>
+    <table class="customers">
+        <tr>
+            <th colspan="10">进度</th>
+        </tr>
+        <tr>
+            <td>类型</td>
+            <td>开始时间</td>
+            <td>进度</td>
+            <td>百分比</td>
+        </tr>
+        <tr v-for="(img,i) in bmk" :class="i%2===0?'alt':null">
+            <td>{{img.type}}</td>
+            <td>{{img.time}}</td>
+            <td>{{img.percentSize}}</td>
+            <td>{{img.percent}}</td>
+        </tr>
+        <tr>
+            <td colspan="10"></td>
+        </tr>
+        <tr v-for="(img,i) in tag" :class="i%2===0?'alt':null">
+            <td>{{img.type}}</td>
+            <td>{{img.time}}</td>
+            <td>{{img.percentSize}}</td>
+            <td>{{img.percent}}</td>
+        </tr>
+
+    </table>
+    <br>
+
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            downloadingFileList: [
+                {
+                    sourceUrl: "http://www.baidu.com",
+                    pidCount: "8978987_p0",
+                    percentSize: '100/256',
+                    percent: 85.45,
+                    progress: {times: 1}
+                },
+            ],
+            bmk: [{type: "未分类", time: "2020-10-28 13:23", percentSize: 2 / 10, percent: 56.28,}],
+            tag: [],
+        },
+        methods: {
+            getDownloadingFileList() {
+                get("/file/getDownloadingFileList", null, function (res) {
+                    let d = res.data.data;
+                    if (d != null) {
+                        _this.downloadingFileList = d;
+                    }
+                })
+            },
+            getProgressesBmk() {
+                get("/bmk/getProgressesBmk", null, function (res) {
+                    let d = res.data.data;
+                    if (d != null) {
+                        console.log(d)
+                        _this.bmk = d;
+                    }
+                })
+            },
+            getProgressesAddTags() {
+                get("/bmk/getProgressesAddTags", null, function (res) {
+                    let d = res.data.data;
+                    if (d != null) {
+                        console.log(d)
+                        _this.tag = d;
+                    }
+                })
+            },
+            downloadUntagged() {
+                get("/bmk/downloadUntagged", null, null);
+            },
+        },
+        created() {
+            setInterval(function () {
+                _this.getDownloadingFileList();
+                _this.getProgressesBmk();
+                _this.getProgressesAddTags();
+            }, 1000);
+        },
+    });
+    const _this = app;
+</script>
+</html>
+

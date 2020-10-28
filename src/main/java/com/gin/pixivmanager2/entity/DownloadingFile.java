@@ -25,6 +25,7 @@ import static com.gin.pixivmanager2.service.FileServiceImpl.ILLUSTRATED_PATTERN;
 @TableName(value = "t_downloadlist")
 public class DownloadingFile {
     final public static String FILE_TYPE_UNTAGGED = "未分类";
+    final public static String FILE_TYPE_FANBOX = "fanbox";
     final public static String FILE_TYPE_SEARCH_RESULTS = "搜索";
     @TableId(type = IdType.AUTO)
     String id;
@@ -65,7 +66,7 @@ public class DownloadingFile {
         if (matcher.find()) {
             return matcher.group();
         }
-        return null;
+        return path.substring(0, path.lastIndexOf("."));
     }
 
     public String getPercent() {
@@ -83,7 +84,18 @@ public class DownloadingFile {
         return sizeFormat(count) + "/" + sizeFormat(size);
     }
 
+    public String getSourceUrl() {
+        Matcher matcher = ILLUSTRATED_PATTERN.matcher(path);
+        if (matcher.find()) {
+            String pidCount = getPidCount();
+            pidCount = pidCount.substring(0, pidCount.indexOf("_"));
+            return "https://www.pixiv.net/artworks/" + pidCount;
+        }
+        return null;
+    }
+
     private static String sizeFormat(Integer size) {
+        size = size == null ? 100 : size;
         int k = 1024;
         double d;
         if (size > k * k) {

@@ -1,6 +1,7 @@
 package com.gin.pixivmanager2.service;
 
 import com.gin.pixivmanager2.entity.DownloadingFile;
+import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
 
 import java.io.File;
@@ -27,6 +28,10 @@ public interface FileService {
      * @param pidCollection
      */
     void archive(Collection<String> pidCollection, String type);
+
+    void download(FanboxItem fanboxItem);
+
+    void download(List<FanboxItem> fanboxItemList);
 
     Map<String, File> getFileMap(String type);
 

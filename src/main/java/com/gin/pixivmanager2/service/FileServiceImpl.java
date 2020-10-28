@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
+import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.util.Request;
 import com.gin.pixivmanager2.util.SpringContextUtil;
@@ -30,6 +31,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final ThreadPoolTaskExecutor downloadExecutor;
     private final String rootPath;
     private final String archivePath;
+    private final String fanboxCookie;
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
@@ -39,6 +41,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
         this.rootPath = configService.getPath("rootPath").getValue();
         this.archivePath = rootPath + "/archive";
+        this.fanboxCookie = configService.getCookie("fanbox").getValue();
     }
 
     @Override
@@ -49,6 +52,30 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void download(Collection<Illustration> illustrations, String type) {
         saveBatch(illustrations.stream().flatMap(i -> getDownloadingList(i, type)).collect(Collectors.toList()));
+    }
+
+    @Override
+    public void download(FanboxItem fanboxItem) {
+        TreeMap<String, String> urlMap = fanboxItem.getUrlMap();
+        String type = fanboxItem.getParentPath();
+        List<DownloadingFile> list = new ArrayList<>();
+        urlMap.forEach((path, url) -> {
+            list.add(new DownloadingFile(url, path, type));
+        });
+        saveBatch(list);
+    }
+
+    @Override
+    public void download(List<FanboxItem> fanboxItemList) {
+        List<DownloadingFile> list = new ArrayList<>();
+        fanboxItemList.forEach(fanboxItem -> {
+            TreeMap<String, String> urlMap = fanboxItem.getUrlMap();
+            String type = fanboxItem.getParentPath();
+            urlMap.forEach((path, url) -> {
+                list.add(new DownloadingFile(url, path, type));
+            });
+        });
+        saveBatch(list);
     }
 
     @Override
@@ -141,13 +168,19 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         QueryWrapper<DownloadingFile> queryWrapper = new QueryWrapper<>();
         queryWrapper.likeRight("type", DownloadingFile.FILE_TYPE_UNTAGGED);
         List<DownloadingFile> list = list(queryWrapper);
-        list.removeIf(downloadingFileList::contains);
+        if (list.size() == 0) {
+            queryWrapper = new QueryWrapper<>();
+            queryWrapper.likeRight("type", DownloadingFile.FILE_TYPE_FANBOX);
+            queryWrapper.last("limit 0,3");
+            list = list(queryWrapper);
+        }
         if (list.size() == 0) {
             queryWrapper = new QueryWrapper<>();
             queryWrapper.likeRight("type", DownloadingFile.FILE_TYPE_SEARCH_RESULTS);
             queryWrapper.last("limit 0,3");
             list = list(queryWrapper);
         }
+        list.removeIf(downloadingFileList::contains);
         if (list.size() > 0) {
             list.forEach(f -> {
                 downloadExecutor.execute(() -> {
@@ -155,11 +188,12 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                     File file = new File(rootPath + "/" + f.getType() + "/" + f.getPath());
                     Request.create(f.getUrl())
                             .setReferer(null)
+                            .setCookie(f.getType().contains("fanbox") ? fanboxCookie : "")
                             .setFile(file)
                             .setProgressMap(f.getProgress())
                             .get()
                     ;
-                    downloadingFileList.remove(f);
+                    downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
                     log.info("下载完毕 {}", file);
                     if (file.exists()) {
                         removeById(f.getId());

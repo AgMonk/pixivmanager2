@@ -384,13 +384,14 @@ public class Request {
     private void handleEntity(int i, HttpEntity entity, String contentType) throws IOException {
         if (contentType.startsWith("image") || contentType.contains("zip") || contentType.contains("photoshop")) {
             int contentLength = Math.toIntExact(entity.getContentLength());
+            contentLength = contentLength == -1 ? 10 * 1024 * 1024 : contentLength;
             File parentFile = file.getParentFile();
             if (progressMap != null) {
                 progressMap.put("size", contentLength);
                 progressMap.put("count", 0);
                 progressMap.put("times", i + 1);
             }
-            if (file.exists() && (file.length() == contentLength || contentLength == -1)) {
+            if (file.exists() && (file.length() == contentLength)) {
                 log.info("文件已存在且大小相同 跳过 {}", file);
                 if (progressMap != null) {
                     progressMap.put("count", progressMap.get("size"));
@@ -437,6 +438,7 @@ public class Request {
 
                 long end = System.currentTimeMillis();
                 log.debug("{} 下载完毕 总耗时 {} 平均速度 {}KB/s", file.getName(), timeCost(start, end), contentLength * 1000L / 1024 / (end - start));
+                complete();
 //                } catch (ConnectionClosedException e) {
 //                    log.warn("连接关闭({}):  {}", i, file.getName());
 //                } catch (SocketTimeoutException e) {

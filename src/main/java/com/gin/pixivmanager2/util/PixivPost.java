@@ -143,6 +143,8 @@ public class PixivPost {
         List<Callable<Void>> tasks = new ArrayList<>();
         long start = System.currentTimeMillis();
         log.debug("添加Tag {} 个", pidAndTags.size());
+        progressMap.put("size", pidAndTags.size());
+        progressMap.put("count", 0);
         for (Map.Entry<String, String> entry : pidAndTags.entrySet()) {
             String pid = entry.getKey();
             String tags = entry.getValue();
@@ -204,6 +206,8 @@ public class PixivPost {
      */
     public static List<JSONObject> getBookmarks(String uid, String cookie, String tag, Integer page, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
         long start = System.currentTimeMillis();
+        progressMap.put("size", page);
+        progressMap.put("count", 0);
         page = (page == null || page < 1) ? 1 : page;
         int offset = 0;
         int limit = 10;
@@ -249,6 +253,8 @@ public class PixivPost {
                 }
             }
         }
+        completeProgress(progressMap);
+
         log.debug("获取 {} 个作品 耗时 {} 毫秒", total, System.currentTimeMillis() - start);
         return worksList;
     }
