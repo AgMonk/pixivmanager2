@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 @Transactional
 @Service
 public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, DownloadingFile> implements FileService {
-    private final static Pattern ILLUSTRATED_PATTERN = Pattern.compile("\\d+_p\\d+");
+    public final static Pattern ILLUSTRATED_PATTERN = Pattern.compile("\\d+_p\\d+");
     private final static Pattern TWITTER_PATTERN = Pattern.compile("\\d+_\\d+");
     private final DownloadingFileDAO downloadingFileDAO;
     private final ThreadPoolTaskExecutor downloadExecutor;
@@ -88,7 +88,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         illustrationList.forEach(i -> {
             pidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
                 String count = s.substring(s.indexOf("_p") + 2);
-                String destPath = archivePath + "/" + i.getIllustType() + i.getAuthorPath() + i.getFilePath(Integer.valueOf(count));
+                String destPath = archivePath + "/" + i.getIllustType() + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
                 File destFile = new File(destPath);
                 File srcFile = fileMap.get(s);
 
@@ -156,10 +156,11 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                     Request.create(f.getUrl())
                             .setReferer(null)
                             .setFile(file)
-                            .setProgressMap(null)
+                            .setProgressMap(f.getProgress())
                             .get()
                     ;
                     downloadingFileList.remove(f);
+                    log.info("下载完毕 {}", file);
                     if (file.exists()) {
                         removeById(f.getId());
                     }
@@ -207,12 +208,17 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         }
     }
 
+    @Override
+    public List<DownloadingFile> getDownloadingFileList() {
+        return downloadingFileList;
+    }
+
     private static Stream<DownloadingFile> getDownloadingList(Illustration ill, String type) {
         List<DownloadingFile> list = new ArrayList<>();
         List<String> urlList = ill.getUrlList();
         List<String> filePathList = ill.getFilePathList();
         for (int i = 0; i < urlList.size(); i++) {
-            list.add(new DownloadingFile(null, urlList.get(i), filePathList.get(i), type));
+            list.add(new DownloadingFile(urlList.get(i), filePathList.get(i), type));
         }
         return list.stream();
     }

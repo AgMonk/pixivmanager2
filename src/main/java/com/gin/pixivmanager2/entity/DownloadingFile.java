@@ -1,6 +1,7 @@
 package com.gin.pixivmanager2.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -9,7 +10,12 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+
+import static com.gin.pixivmanager2.service.FileServiceImpl.ILLUSTRATED_PATTERN;
 
 @Data
 @AllArgsConstructor
@@ -25,6 +31,8 @@ public class DownloadingFile {
     String url;
     String path;
     String type;
+    @TableField(exist = false)
+    Map<String, Integer> progress = new HashMap<>();
 
 
     @Override
@@ -45,4 +53,48 @@ public class DownloadingFile {
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
     }
+
+    public DownloadingFile(String url, String path, String type) {
+        this.url = url;
+        this.path = path;
+        this.type = type;
+    }
+
+    public String getPidCount() {
+        Matcher matcher = ILLUSTRATED_PATTERN.matcher(path);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        return null;
+    }
+
+    public String getPercent() {
+        Integer count = progress.get("count");
+        Integer size = progress.get("size");
+        if (count != null && size != null) {
+            return String.format("%.2f", 100.0 * count / size);
+        }
+        return null;
+    }
+
+    public String getPercentSize() {
+        Integer count = progress.get("count");
+        Integer size = progress.get("size");
+        return sizeFormat(count) + "/" + sizeFormat(size);
+    }
+
+    private static String sizeFormat(Integer size) {
+        int k = 1024;
+        double d;
+        if (size > k * k) {
+            d = 1.0 * size / k / k;
+            return String.format("%.2f", d) + "M";
+        } else if (size > 100 * k) {
+            d = 1.0 * size / k;
+            return String.format("%.1f", d) + "K";
+        } else {
+            return size + "B";
+        }
+    }
+
 }

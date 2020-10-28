@@ -210,12 +210,19 @@ public class Illustration {
         if (StringUtils.isEmpty(fileName)) {
             return null;
         }
-        String sb = addBrackets("bmk", bookmarkCount) +
+        String sb =
                 addBrackets(id, "p" + count) +
-                addBrackets("title", title) +
-                addBrackets("tags", getTagString()) +
-                fileName.substring(fileName.lastIndexOf("."));
+                        addBrackets("title", title) +
+                        addBrackets("tags", getTagString()) +
+                        fileName.substring(fileName.lastIndexOf("."));
         return clean(sb);
+    }
+
+    public String getFilePathWithBmkCount(Integer count) {
+        if (StringUtils.isEmpty(fileName)) {
+            return null;
+        }
+        return addBrackets("bmk", bookmarkCount) + getFilePath(count);
     }
 
     public String getAuthorPath() {

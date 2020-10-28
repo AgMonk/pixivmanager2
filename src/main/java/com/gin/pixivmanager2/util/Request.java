@@ -346,6 +346,7 @@ public class Request {
      */
     private void addProgress(Integer count) {
         Integer c = progressMap.get("count");
+        c = c == null ? 0 : c;
         c += count;
         progressMap.put("count", c);
     }
@@ -386,6 +387,7 @@ public class Request {
             File parentFile = file.getParentFile();
             if (progressMap != null) {
                 progressMap.put("size", contentLength);
+                progressMap.put("count", 0);
                 progressMap.put("times", i + 1);
             }
             if (file.exists() && (file.length() == contentLength || contentLength == -1)) {
@@ -508,7 +510,7 @@ public class Request {
             } catch (RuntimeException e) {
                 String message = e.getMessage();
                 log.warn(message);
-                if (!message.contains("302")) {
+                if (message != null && !message.contains("302")) {
                     e.printStackTrace();
                 }
                 break;

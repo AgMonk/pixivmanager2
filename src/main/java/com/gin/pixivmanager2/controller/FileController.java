@@ -1,5 +1,6 @@
 package com.gin.pixivmanager2.controller;
 
+import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.response.Res;
 import com.gin.pixivmanager2.service.ConfigService;
 import com.gin.pixivmanager2.service.FileService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.constraints.NotEmpty;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -73,5 +75,10 @@ public class FileController {
         }
 
         return map;
+    }
+
+    @RequestMapping("getDownloadingFileList")
+    public Res<List<DownloadingFile>> getDownloadingFileList() {
+        return new Res<>(2000, "正在下载的文件列表 获取成功", fileService.getDownloadingFileList());
     }
 }

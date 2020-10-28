@@ -1,9 +1,11 @@
 package com.gin.pixivmanager2.service;
 
+import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.Illustration;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 public interface FileService {
@@ -27,4 +29,6 @@ public interface FileService {
     void archive(Collection<String> pidCollection, String type);
 
     Map<String, File> getFileMap(String type);
+
+    List<DownloadingFile> getDownloadingFileList();
 }
