@@ -93,6 +93,7 @@ public class PixivPost {
         }
         List<JSONObject> detail = TasksUtil.executeTasks(tasks, 60, executor, "detail", 2);
         long end = System.currentTimeMillis();
+        detail.removeIf(Objects::isNull);
         log.info("获得作品详情 {} 个 耗时 {}", detail.size(), Request.timeCost(start, end));
         return detail;
     }

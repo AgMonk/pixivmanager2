@@ -512,9 +512,9 @@ public class Request {
             } catch (RuntimeException e) {
                 String message = e.getMessage();
                 log.warn(message);
-                if (message != null && !message.contains("302")) {
-                    e.printStackTrace();
-                }
+//                if (message != null && !message.contains("302")) {
+//                    e.printStackTrace();
+//                }
                 break;
             } catch (SocketTimeoutException e) {
                 if (maxTimes == i + 1) {

@@ -11,10 +11,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -71,40 +68,45 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      */
     @Override
     public List<Illustration> findList(Collection<String> ids, Integer minBookCount) {
-        //查询缓存
-        List<Illustration> cachedList =
-                illustrationMap.keySet().stream()
-                        .filter(ids::contains)
-                        .map(illustrationMap::get)
-                        .filter(i -> !needUpdate(i, minBookCount))
-                        .collect(Collectors.toList());
-        List<String> cachedIds = cachedList.stream().map(Illustration::getId).collect(Collectors.toList());
+        Map<String, Illustration> map = new HashMap<>(ids.size());
+        List<String> lackList = new ArrayList<>(ids);
 
-        List<String> lackList = ids.stream().filter(id -> !cachedIds.contains(id)).collect(Collectors.toList());
+        //缓存
+        illustrationMap.keySet().stream()
+                .filter(lackList::contains)
+                .forEach(s -> {
+                    lackList.remove(s);
+                    map.put(s, illustrationMap.get(s));
+                });
+
+        //查询数据库
         if (lackList.size() > 0) {
-            //查询数据库
             QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
             queryWrapper.in("id", lackList);
             List<Illustration> daoList = list(queryWrapper);
-            //放入缓存
-            daoList.stream().filter(i -> !needUpdate(i, minBookCount)).forEach(i -> {
+            daoList.forEach(i -> {
+                map.put(i.getId(), i);
                 illustrationMap.put(i.getId(), i);
-                cachedList.add(i);
                 lackList.remove(i.getId());
             });
         }
-        if (lackList.size() > 0) {
-            List<Illustration> list = PixivPost.detail(lackList, null, requestExecutor, new HashMap<>()).stream()
+
+        //pixiv请求更新旧数据
+        List<String> needPost = map.values().stream().filter(i -> needUpdate(i, minBookCount)).map(Illustration::getId).collect(Collectors.toList());
+        needPost.addAll(lackList);
+        log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
+        if (needPost.size() > 0) {
+            List<Illustration> list = PixivPost.detail(needPost, null, requestExecutor, new HashMap<>()).stream()
                     .map(Illustration::parse)
                     .filter(i -> i.getBookmarkCount() > minBookCount)
-                    .collect(Collectors.toList());
-            cachedList.addAll(list);
-            list.forEach(i -> illustrationMap.put(i.getId(), i));
+                    .peek(i -> {
+                        map.put(i.getId(), i);
+                        illustrationMap.put(i.getId(), i);
+                    }).collect(Collectors.toList());
             saveOrUpdateBatch(list);
         }
 
-
-        return cachedList;
+        return new ArrayList<>(map.values());
     }
 
 
