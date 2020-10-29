@@ -589,8 +589,4 @@ public class Request {
         return map;
     }
 
-    public static void main(String[] args) {
-
-
-    }
 }
