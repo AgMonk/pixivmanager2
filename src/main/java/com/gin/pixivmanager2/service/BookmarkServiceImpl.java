@@ -26,24 +26,21 @@ public class BookmarkServiceImpl implements BookmarkService {
     private final String cookie;
     private final String tt;
     private final ThreadPoolTaskExecutor requestExecutor;
+    private final ProgressService progressService;
 
-    List<TaskProgress> progressesBmk = new ArrayList<>();
-    List<TaskProgress> progressesAddTags = new ArrayList<>();
-
-    public BookmarkServiceImpl(ConfigService configService, ThreadPoolTaskExecutor requestExecutor) {
+    public BookmarkServiceImpl(ConfigService configService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
         cookie = configService.getCookie("pixiv").getValue();
         uid = configService.getConfig("pixivUid").getValue();
         tt = configService.getConfig("tt").getValue();
 
         this.requestExecutor = requestExecutor;
+        this.progressService = progressService;
     }
 
     public List<Illustration> getBookmarks(String tag, Integer page) {
-        TaskProgress taskProgress = new TaskProgress(tag);
-        progressesBmk.add(taskProgress);
-
+        TaskProgress taskProgress = progressService.add(tag);
         List<JSONObject> jsonObjectList = PixivPost.getBookmarks(uid, cookie, tag, page, requestExecutor, taskProgress.getProgress());
-        progressesBmk.removeIf(t -> t.getCreatedTime() == taskProgress.getCreatedTime());
+        progressService.remove(taskProgress);
         if (jsonObjectList == null) {
             return new ArrayList<>();
         }
@@ -64,22 +61,11 @@ public class BookmarkServiceImpl implements BookmarkService {
         fileService.download(list, "未分类");
 
         //收藏
-        TaskProgress taskProgress = new TaskProgress("添加Tag");
-        progressesAddTags.add(taskProgress);
+        TaskProgress taskProgress = progressService.add("添加Tag");
         Map<String, String> pidAndTags = new HashMap<>();
         list.forEach(i -> pidAndTags.put(i.getId(), i.getTagString()));
         PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, taskProgress.getProgress());
-        progressesAddTags.removeIf(t -> t.getCreatedTime() == taskProgress.getCreatedTime());
-
+        progressService.remove(taskProgress);
     }
 
-    @Override
-    public List<TaskProgress> getProgressesBmk() {
-        return progressesBmk;
-    }
-
-    @Override
-    public List<TaskProgress> getProgressesAddTags() {
-        return progressesAddTags;
-    }
 }

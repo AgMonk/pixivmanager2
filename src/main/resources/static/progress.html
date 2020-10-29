@@ -47,16 +47,7 @@
             <td>进度</td>
             <td>百分比</td>
         </tr>
-        <tr v-for="(img,i) in bmk" :class="i%2===0?'alt':null">
-            <td>{{img.type}}</td>
-            <td>{{img.time}}</td>
-            <td>{{img.percentSize}}</td>
-            <td>{{img.percent}}</td>
-        </tr>
-        <tr>
-            <td colspan="10"></td>
-        </tr>
-        <tr v-for="(img,i) in tag" :class="i%2===0?'alt':null">
+        <tr v-for="(img,i) in progress" :class="i%2===0?'alt':null">
             <td>{{img.type}}</td>
             <td>{{img.time}}</td>
             <td>{{img.percentSize}}</td>
@@ -81,8 +72,7 @@
                     progress: {times: 1}
                 },
             ],
-            bmk: [{type: "未分类", time: "2020-10-28 13:23", percentSize: 2 / 10, percent: 56.28,}],
-            tag: [],
+            progress: [{type: "未分类", time: "2020-10-28 13:23", percentSize: 2 / 10, percent: 56.28,}],
         },
         methods: {
             getDownloadingFileList() {
@@ -93,21 +83,12 @@
                     }
                 })
             },
-            getProgressesBmk() {
-                get("/bmk/getProgressesBmk", null, function (res) {
+            getProgresses() {
+                get("/progress/get", null, function (res) {
                     let d = res.data.data;
                     if (d != null) {
                         console.log(d)
-                        _this.bmk = d;
-                    }
-                })
-            },
-            getProgressesAddTags() {
-                get("/bmk/getProgressesAddTags", null, function (res) {
-                    let d = res.data.data;
-                    if (d != null) {
-                        console.log(d)
-                        _this.tag = d;
+                        _this.progress = d;
                     }
                 })
             },
@@ -118,8 +99,7 @@
         created() {
             setInterval(function () {
                 _this.getDownloadingFileList();
-                _this.getProgressesBmk();
-                _this.getProgressesAddTags();
+                _this.getProgresses();
             }, 500);
         },
     });

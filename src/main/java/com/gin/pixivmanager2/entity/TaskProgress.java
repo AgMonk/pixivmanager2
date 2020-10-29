@@ -12,6 +12,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author bx002
@@ -25,6 +26,7 @@ public class TaskProgress {
     long createdTime = System.currentTimeMillis();
     Map<String, Integer> progress = new HashMap<>();
     String type;
+    String id = UUID.randomUUID().toString();
 
     public String getPercent() {
         Integer count = progress.get("count");
@@ -47,4 +49,6 @@ public class TaskProgress {
     public TaskProgress(String type) {
         this.type = type;
     }
+
+
 }
