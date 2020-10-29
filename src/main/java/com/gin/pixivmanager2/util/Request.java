@@ -479,7 +479,7 @@ public class Request {
                         log.debug("响应类型 {}", contentType);
                         if (!contentType.contains("json") && entity.getContentLength() == -1L) {
                             log.warn("第{}次请求 正文大小错误 重新请求 地址：{}", i + 1, method.getURI());
-                            if (i < 2) {
+                            if (i < 5) {
                                 break;
                             } else {
                                 log.warn("第{}次请求 正文大小错误 强行下载  地址：{}", i + 1, method.getURI());

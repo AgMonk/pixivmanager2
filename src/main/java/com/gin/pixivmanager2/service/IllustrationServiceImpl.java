@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gin.pixivmanager2.dao.IllustrationDAO;
 import com.gin.pixivmanager2.entity.Illustration;
+import com.gin.pixivmanager2.entity.TaskProgress;
 import com.gin.pixivmanager2.util.PixivPost;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -22,16 +23,16 @@ import java.util.stream.Collectors;
 @Service
 public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illustration> implements IllustrationService {
     private final ThreadPoolTaskExecutor requestExecutor;
+    private final ProgressService progressService;
 
     /**
      * 作品详情缓存
      */
     private final Map<String, Illustration> illustrationMap = new HashMap<>();
 
-    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor) {
+    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
         this.requestExecutor = requestExecutor;
-
-
+        this.progressService = progressService;
     }
 
     /**
@@ -95,16 +96,19 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         List<String> needPost = map.values().stream().filter(i -> needUpdate(i, minBookCount)).map(Illustration::getId).collect(Collectors.toList());
         needPost.addAll(lackList);
         log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
+        TaskProgress detailProgress = progressService.add("详情");
         if (needPost.size() > 0) {
-            List<Illustration> list = PixivPost.detail(needPost, null, requestExecutor, new HashMap<>()).stream()
+            List<Illustration> list = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
                     .map(Illustration::parse)
                     .filter(i -> i.getBookmarkCount() > minBookCount)
                     .peek(i -> {
                         map.put(i.getId(), i);
                         illustrationMap.put(i.getId(), i);
                     }).collect(Collectors.toList());
+            progressService.remove(detailProgress);
             saveOrUpdateBatch(list);
         }
+        
 
         return new ArrayList<>(map.values());
     }

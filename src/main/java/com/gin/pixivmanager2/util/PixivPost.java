@@ -83,6 +83,8 @@ public class PixivPost {
     public static List<JSONObject> detail(Collection<String> pidCollection, String cookie, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
         List<Callable<JSONObject>> tasks = new ArrayList<>();
         long start = System.currentTimeMillis();
+        progressMap.put("size", pidCollection.size());
+        progressMap.put("count", 0);
         log.info("请求作品详情 {} 个", pidCollection.size());
         for (String pid : pidCollection) {
             tasks.add(() -> {

@@ -6,6 +6,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * @author bx002
+ */
 @RestController
 @RequestMapping("bmk")
 @Validated
@@ -18,6 +21,7 @@ public class BookmarkController {
     }
 
     @RequestMapping("downloadUntagged")
+//    @Scheduled(cron = "0 0/10 * * * ?")
     public void downloadUntagged() {
         bookmarkService.downloadUntaggedBookmarks();
     }

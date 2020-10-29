@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @author bx002
+ */
 @RestController
 @RequestMapping("fanbox")
 @Validated

@@ -27,14 +27,16 @@ public class BookmarkServiceImpl implements BookmarkService {
     private final String tt;
     private final ThreadPoolTaskExecutor requestExecutor;
     private final ProgressService progressService;
+    private final FileService fileService;
 
-    public BookmarkServiceImpl(ConfigService configService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
+    public BookmarkServiceImpl(ConfigService configService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService, FileService fileService) {
         cookie = configService.getCookie("pixiv").getValue();
         uid = configService.getConfig("pixivUid").getValue();
         tt = configService.getConfig("tt").getValue();
 
         this.requestExecutor = requestExecutor;
         this.progressService = progressService;
+        this.fileService = fileService;
     }
 
     public List<Illustration> getBookmarks(String tag, Integer page) {
@@ -57,7 +59,6 @@ public class BookmarkServiceImpl implements BookmarkService {
         if (list.size() == 0) {
             return;
         }
-        FileService fileService = SpringContextUtil.getBean(FileService.class);
         fileService.download(list, "未分类");
 
         //收藏
@@ -66,6 +67,8 @@ public class BookmarkServiceImpl implements BookmarkService {
         list.forEach(i -> pidAndTags.put(i.getId(), i.getTagString()));
         PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, taskProgress.getProgress());
         progressService.remove(taskProgress);
+
+        fileService.startDownload();
     }
 
 }
