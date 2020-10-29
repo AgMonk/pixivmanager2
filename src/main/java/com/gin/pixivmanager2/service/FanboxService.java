@@ -9,7 +9,7 @@ public interface FanboxService {
 
     List<FanboxItem> listCreator(String creatorId);
 
-    List<FanboxItem> listSupporting();
+    List<FanboxItem> listSupporting(Integer limit);
 
     void downloadItem(String postId);
 }

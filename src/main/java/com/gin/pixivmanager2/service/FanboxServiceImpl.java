@@ -57,12 +57,13 @@ public class FanboxServiceImpl extends ServiceImpl<FanboxItemDAO, FanboxItem> im
     }
 
     @Override
-    public List<FanboxItem> listSupporting() {
+
+    public List<FanboxItem> listSupporting(Integer limit) {
         List<FanboxItem> allItems = list();
 
         List<FanboxItem> listFromFanbox = new ArrayList<>();
 
-        JSONArray array = FanboxPost.listSupporting(cookie);
+        JSONArray array = FanboxPost.listSupporting(cookie, limit);
         for (int i = 0; i < array.size(); i++) {
             listFromFanbox.add(new FanboxItem(array.getJSONObject(i)));
         }

@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, DownloadingFile> implements FileService {
     public final static Pattern ILLUSTRATED_PATTERN = Pattern.compile("\\d+_p\\d+");
     private final static Pattern TWITTER_PATTERN = Pattern.compile("\\d+_\\d+");
-    private final DownloadingFileDAO downloadingFileDAO;
     private final ThreadPoolTaskExecutor downloadExecutor;
     private final String rootPath;
     private final String archivePath;
@@ -35,8 +34,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
-    public FileServiceImpl(DownloadingFileDAO downloadingFileDAO, ThreadPoolTaskExecutor downloadExecutor, ConfigService configService) {
-        this.downloadingFileDAO = downloadingFileDAO;
+    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService) {
         this.downloadExecutor = downloadExecutor;
 
         this.rootPath = configService.getPath("rootPath").getValue();
