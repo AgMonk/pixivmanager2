@@ -159,28 +159,22 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     }
 
-    @Scheduled(cron = "0/3 * * * * ?")
+    @Scheduled(cron = "0/30 * * * * ?")
     public void startDownload() {
-        if (downloadExecutor.getActiveCount() == downloadExecutor.getMaxPoolSize()) {
+        int maxPoolSize = downloadExecutor.getMaxPoolSize();
+        int activeCount = downloadExecutor.getActiveCount();
+        if (activeCount >= maxPoolSize) {
             return;
         }
-
+        List<String> downloadingId = downloadingFileList.stream().map(DownloadingFile::getId).collect(Collectors.toList());
         QueryWrapper<DownloadingFile> queryWrapper = new QueryWrapper<>();
-        queryWrapper.likeRight("type", DownloadingFile.FILE_TYPE_UNTAGGED);
+        if (downloadingId.size() > 0) {
+            queryWrapper.notIn("id", downloadingId);
+        }
         List<DownloadingFile> list = list(queryWrapper);
-        if (list.size() == 0) {
-            queryWrapper = new QueryWrapper<>();
-            queryWrapper.likeRight("type", DownloadingFile.FILE_TYPE_FANBOX);
-            queryWrapper.last("limit 0,3");
-            list = list(queryWrapper);
-        }
-        if (list.size() == 0) {
-            queryWrapper = new QueryWrapper<>();
-            queryWrapper.likeRight("type", DownloadingFile.FILE_TYPE_SEARCH_RESULTS);
-            queryWrapper.last("limit 0,3");
-            list = list(queryWrapper);
-        }
-        list.removeIf(downloadingFileList::contains);
+        Collections.sort(list);
+        list = list.subList(0, Math.min(list.size(), maxPoolSize - activeCount));
+
         if (list.size() > 0) {
             list.forEach(f -> {
                 downloadExecutor.execute(() -> {
@@ -194,21 +188,15 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                             .get()
                     ;
                     downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
-                    log.info("下载完毕 {}", file);
                     if (file.exists()) {
+                        log.info("下载完毕 {}", file);
                         removeById(f.getId());
+                    } else {
+                        log.warn("下载失败 {}", file);
                     }
                 });
             });
-        } else {
-            //下载列表为空 休息
-            try {
-                Thread.sleep(30 * 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
-
 
     }
 

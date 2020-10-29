@@ -186,6 +186,7 @@ public class Illustration {
         if (StringUtils.isEmpty(urlPrefix) || StringUtils.isEmpty(fileName)) {
             return null;
         }
+        urlPrefix += urlPrefix.endsWith("/") ? "" : "/";
         List<String> list = new ArrayList<>();
         if (illustType == ILLUST_TYPE_GIF) {
             list.add(urlPrefix + fileName);

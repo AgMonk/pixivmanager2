@@ -43,12 +43,12 @@ public class BookmarkServiceImpl implements BookmarkService {
         progressesBmk.add(taskProgress);
 
         List<JSONObject> jsonObjectList = PixivPost.getBookmarks(uid, cookie, tag, page, requestExecutor, taskProgress.getProgress());
+        progressesBmk.removeIf(t -> t.getCreatedTime() == taskProgress.getCreatedTime());
         if (jsonObjectList == null) {
             return new ArrayList<>();
         }
         List<String> list = jsonObjectList.stream().map(j -> j.getString("id")).collect(Collectors.toList());
         IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
-        progressesBmk.removeIf(t -> t.getCreatedTime() == taskProgress.getCreatedTime());
 
         return illustrationService.findList(list, 0);
     }

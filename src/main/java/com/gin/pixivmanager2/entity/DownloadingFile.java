@@ -23,10 +23,15 @@ import static com.gin.pixivmanager2.service.FileServiceImpl.ILLUSTRATED_PATTERN;
 @ToString
 @Accessors(chain = true)
 @TableName(value = "t_downloadlist")
-public class DownloadingFile {
+public class DownloadingFile implements Comparable<DownloadingFile> {
     final public static String FILE_TYPE_UNTAGGED = "未分类";
     final public static String FILE_TYPE_FANBOX = "fanbox";
     final public static String FILE_TYPE_SEARCH_RESULTS = "搜索";
+    final public static String[] TYPE_LIST = {
+            FILE_TYPE_UNTAGGED, FILE_TYPE_FANBOX, FILE_TYPE_SEARCH_RESULTS
+    };
+
+
     @TableId(type = IdType.AUTO)
     String id;
     String url;
@@ -109,4 +114,36 @@ public class DownloadingFile {
         }
     }
 
+
+    @Override
+    public int compareTo(DownloadingFile o) {
+        if (this.equals(o)) {
+            return 0;
+        }
+        DownloadingFile that = o;
+        Integer numThis = null;
+        Integer numThat = null;
+        for (int i = 0; i < TYPE_LIST.length; i++) {
+            if (this.type.startsWith(TYPE_LIST[i])) {
+                numThis = i;
+            }
+            if (that.type.startsWith(TYPE_LIST[i])) {
+                numThat = i;
+            }
+        }
+        if (numThis == null && numThat == null) {
+            return -1 * this.path.compareTo(that.path);
+        }
+        if (numThis != null && numThat == null) {
+            return -1;
+        }
+        if (numThis == null) {
+            return 1;
+        }
+        if (numThis.equals(numThat)) {
+            return -1 * this.path.compareTo(that.path);
+        }
+
+        return numThis - numThat;
+    }
 }
