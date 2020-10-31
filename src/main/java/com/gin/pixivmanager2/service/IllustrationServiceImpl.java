@@ -46,17 +46,29 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         Illustration ill = illustrationMap.get(id);
         if (ill == null) {
             ill = getById(id);
+            illustrationMap.put(id, ill);
         }
-        long l = 30L * 24 * 60 * 60 * 1000;
         if (needUpdate(ill, 0)) {
-            JSONObject detail = PixivPost.detail(id, null);
-            if (detail != null) {
-                ill = Illustration.parse(detail);
-                saveOrUpdate(ill);
-            }
+            ill = getDetail(id, ill);
         }
-        illustrationMap.put(id, ill);
 
+        return ill;
+    }
+
+    /**
+     * 不带条件请求作品详情
+     *
+     * @param id
+     * @param ill
+     * @return
+     */
+    public Illustration getDetail(String id, Illustration ill) {
+        JSONObject detail = PixivPost.detail(id, null);
+        if (detail != null) {
+            ill = Illustration.parse(detail);
+            saveOrUpdate(ill);
+            illustrationMap.put(id, ill);
+        }
         return ill;
     }
 
@@ -96,8 +108,8 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         List<String> needPost = map.values().stream().filter(i -> needUpdate(i, minBookCount)).map(Illustration::getId).collect(Collectors.toList());
         needPost.addAll(lackList);
         log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
-        TaskProgress detailProgress = progressService.add("详情");
         if (needPost.size() > 0) {
+            TaskProgress detailProgress = progressService.add("详情任务");
             List<Illustration> list = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
                     .map(Illustration::parse)
                     .filter(i -> i.getBookmarkCount() > minBookCount)
@@ -108,7 +120,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
             progressService.remove(detailProgress);
             saveOrUpdateBatch(list);
         }
-        
+
 
         return new ArrayList<>(map.values());
     }

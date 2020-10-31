@@ -193,7 +193,24 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         log.info("下载完毕 {}", file);
                         removeById(f.getId());
                     } else {
-                        log.warn("下载失败 {}", file);
+                        Matcher matcher = ILLUSTRATED_PATTERN.matcher(f.getUrl());
+                        if (matcher.find()) {
+                            String group = matcher.group();
+                            String id = group.substring(0, group.indexOf("_"));
+                            log.warn("下载失败 {}", "https://www.pixiv.net/artworks/" + id);
+
+                            log.info("尝试更新作品详情 {}", id);
+                            IllustrationServiceImpl service = SpringContextUtil.getBean(IllustrationServiceImpl.class);
+                            Illustration detail = service.getDetail(id, null);
+                            //删除已有下载url
+                            QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
+                            qw.like("url", id);
+                            remove(qw);
+                            //重新添加下载url
+                            download(detail, "未分类");
+                        } else {
+                            log.warn("下载失败 {}", file);
+                        }
                     }
                 });
             });
