@@ -158,7 +158,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     @Override
-    @Scheduled(cron = "0/30 * * * * ?")
+    @Scheduled(cron = "0/10 * * * * ?")
     public void startDownload() {
         int maxPoolSize = downloadExecutor.getMaxPoolSize();
         int activeCount = downloadExecutor.getActiveCount();
@@ -166,7 +166,6 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             log.info("{} >= {}", activeCount, maxPoolSize);
             return;
         }
-        log.info("载入下载队列");
         List<String> downloadingId = downloadingFileList.stream().map(DownloadingFile::getId).collect(Collectors.toList());
         QueryWrapper<DownloadingFile> queryWrapper = new QueryWrapper<>();
         if (downloadingId.size() > 0) {
@@ -177,6 +176,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         list = list.subList(0, Math.min(list.size(), maxPoolSize - activeCount));
 
         if (list.size() > 0) {
+            log.info("载入下载队列 {}个", list.size());
             list.forEach(f -> {
                 downloadExecutor.execute(() -> {
                     downloadingFileList.add(f);
