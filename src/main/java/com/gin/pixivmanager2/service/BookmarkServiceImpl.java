@@ -7,6 +7,7 @@ import com.gin.pixivmanager2.util.PixivPost;
 import com.gin.pixivmanager2.util.SpringContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +55,7 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     @Override
     @Async("defaultExecutor")
+    @Scheduled(cron = "0 5/10 * * * ?")
     public void downloadUntaggedBookmarks() {
         List<Illustration> list = getBookmarks("未分類", 3);
         if (list.size() == 0) {
