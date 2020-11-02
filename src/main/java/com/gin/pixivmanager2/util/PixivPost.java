@@ -6,6 +6,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 
 /**
@@ -292,7 +293,7 @@ public class PixivPost {
      * @param mode        模式 可取值： all safe r18
      * @return 搜索结果
      */
-    public static List<JSONObject> search(String keyword, Integer p, String cookie, boolean searchTitle, String mode) {
+    public static JSONObject search(String keyword, Integer p, String cookie, boolean searchTitle, String mode) {
         if (keyword == null) {
             return null;
         }
@@ -313,26 +314,24 @@ public class PixivPost {
                 .getResult();
         JSONObject body = getBody(result);
 
-        if (body != null) {
-            JSONObject illustManga = body.getJSONObject("illustManga");
-            Integer total = illustManga.getInteger("total");
-            JSONArray data = illustManga.getJSONArray("data");
-            log.info("搜索{} 关键字: {}  第 {} 页 获得结果 {} 个 总计结果 {} 个 共计 {} 页", searchTitle ? "标题" : "标签", keyword, p, data.size(), total, total / 60 + 1);
-
-            List<JSONObject> resultList = new ArrayList<>();
-            for (int i = 0; i < data.size(); i++) {
-                resultList.add(data.getJSONObject(i));
-            }
-            return resultList;
+        if (body == null) {
+            return null;
         }
 
-        return null;
+        JSONObject illustManga = body.getJSONObject("illustManga");
+        Integer total = illustManga.getInteger("total");
+        JSONArray data = illustManga.getJSONArray("data");
+        JSONObject json = new JSONObject();
+        json.put("total", total);
+        json.put("data", data);
+        log.info("搜索{} 关键字: {}  第 {} 页 获得结果 {} 个 总计结果 {} 个 共计 {} 页", searchTitle ? "标题" : "标签", keyword, p, data.size(), total, total / 60 + 1);
+        return json;
     }
 
     /**
      * 批量搜索
      *
-     * @param keywordSet  关键字
+     * @param keywords    关键字
      * @param start       页数
      * @param cookie      cookie(可选 不提供时不能搜索R-18作品)
      * @param searchTitle true = 搜索标题 false =搜 索tag
@@ -341,25 +340,27 @@ public class PixivPost {
      * @param progressMap 进度
      * @return 搜索结果
      */
-    public static List<JSONObject> search(Set<String> keywordSet, Integer start, Integer end, String cookie, boolean searchTitle
+    public static List<JSONObject> search(Collection<String> keywords, Integer start, Integer end, String cookie, boolean searchTitle
             , String mode, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
         List<Callable<List<JSONObject>>> tasks = new ArrayList<>();
-        for (String keyword : keywordSet) {
+        for (String keyword : keywords) {
             for (int i = start; i <= end; i++) {
                 Integer finalI = i;
                 tasks.add(() -> {
-                    List<JSONObject> search = search(keyword, finalI, cookie, searchTitle, mode);
+                    JSONObject json = search(keyword, finalI, cookie, searchTitle, mode);
+                    List<JSONObject> list = new ArrayList<>();
+                    if (json != null) {
+                        JSONArray data = json.getJSONArray("data");
+                        data.forEach(o -> list.add((JSONObject) o));
+                    }
                     addProgress(progressMap);
-                    return search;
+                    return list;
                 });
             }
         }
         List<List<JSONObject>> search = TasksUtil.executeTasks(tasks, 60, executor, "search", 3);
-        List<JSONObject> result = new ArrayList<>();
-        for (List<JSONObject> list : search) {
-            result.addAll(list);
-        }
-        return result;
+        
+        return search.stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
     /**

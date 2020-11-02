@@ -44,11 +44,14 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     @Override
     public void download(Illustration illustration, String type) {
+        log.info("添加下载队列 {}个", illustration.getPageCount());
         saveBatch(getDownloadingList(illustration, type).collect(Collectors.toList()));
     }
 
     @Override
     public void download(Collection<Illustration> illustrations, String type) {
+        int sum = illustrations.stream().mapToInt(Illustration::getPageCount).sum();
+        log.info("添加下载队列 {}个", sum);
         saveBatch(illustrations.stream().flatMap(i -> getDownloadingList(i, type)).collect(Collectors.toList()));
     }
 
@@ -109,7 +112,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         //带_p的pid转为不带_p的pid并去重
         List<String> list = pidCollection.stream().map(s -> s.substring(0, s.indexOf("_"))).distinct().collect(Collectors.toList());
         IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
-        List<Illustration> illustrationList = illustrationService.findList(list, 0);
+        List<Illustration> illustrationList = illustrationService.findList(list, 0, false);
         illustrationList.forEach(i -> {
             pidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
                 String count = s.substring(s.indexOf("_p") + 2);
@@ -163,7 +166,6 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         int maxPoolSize = downloadExecutor.getMaxPoolSize();
         int activeCount = downloadExecutor.getActiveCount();
         if (activeCount >= maxPoolSize) {
-            log.info("{} >= {}", activeCount, maxPoolSize);
             return;
         }
         List<String> downloadingId = downloadingFileList.stream().map(DownloadingFile::getId).collect(Collectors.toList());
@@ -179,7 +181,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             log.info("载入下载队列 {}个", list.size());
             list.forEach(f -> {
                 downloadExecutor.execute(() -> {
-                    downloadingFileList.add(f);
+                    synchronized (downloadingFileList) {
+                        downloadingFileList.add(f);
+                    }
                     File file = new File(rootPath + "/" + f.getType() + "/" + f.getPath());
                     Request.create(f.getUrl())
                             .setReferer(null)
@@ -188,9 +192,12 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                             .setProgressMap(f.getProgress())
                             .get()
                     ;
-                    downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
+                    synchronized (downloadingFileList) {
+                        downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
+                    }
                     if (file.exists()) {
-                        log.info("下载完毕 {}", file);
+                        String path = file.getPath();
+                        log.info("下载完毕 {}", path.replace("\\", "/").replace(rootPath, ""));
                         removeById(f.getId());
                     } else {
                         Matcher matcher = ILLUSTRATED_PATTERN.matcher(f.getUrl());

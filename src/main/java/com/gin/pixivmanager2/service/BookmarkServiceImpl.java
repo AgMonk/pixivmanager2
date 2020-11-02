@@ -6,7 +6,6 @@ import com.gin.pixivmanager2.entity.TaskProgress;
 import com.gin.pixivmanager2.util.PixivPost;
 import com.gin.pixivmanager2.util.SpringContextUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -18,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * @author bx002
+ */
 @Slf4j
 @Transactional
 @Service
@@ -50,11 +52,10 @@ public class BookmarkServiceImpl implements BookmarkService {
         List<String> list = jsonObjectList.stream().map(j -> j.getString("id")).collect(Collectors.toList());
         IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
 
-        return illustrationService.findList(list, 0);
+        return illustrationService.findList(list, 0, false);
     }
 
     @Override
-    @Async("defaultExecutor")
     @Scheduled(cron = "0 5/10 * * * ?")
     public void downloadUntaggedBookmarks() {
         List<Illustration> list = getBookmarks("未分類", 3);

@@ -23,9 +23,10 @@ public interface IllustrationService extends IService<Illustration> {
      *
      * @param ids
      * @param minBookCount
+     * @param newDetailOnly
      * @return
      */
-    List<Illustration> findList(Collection<String> ids, Integer minBookCount);
+    List<Illustration> findList(Collection<String> ids, Integer minBookCount, boolean newDetailOnly);
 
 
 }

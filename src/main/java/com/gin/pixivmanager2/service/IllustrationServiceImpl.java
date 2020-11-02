@@ -77,10 +77,11 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      *
      * @param ids
      * @param minBookCount
+     * @param newDetailOnly
      * @return
      */
     @Override
-    public List<Illustration> findList(Collection<String> ids, Integer minBookCount) {
+    public List<Illustration> findList(Collection<String> ids, Integer minBookCount, boolean newDetailOnly) {
         Map<String, Illustration> map = new HashMap<>(ids.size());
         List<String> lackList = new ArrayList<>(ids);
 
@@ -119,9 +120,10 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
                     }).collect(Collectors.toList());
             progressService.remove(detailProgress);
             saveOrUpdateBatch(list);
+            if (newDetailOnly) {
+                return list;
+            }
         }
-
-
         return new ArrayList<>(map.values());
     }
 

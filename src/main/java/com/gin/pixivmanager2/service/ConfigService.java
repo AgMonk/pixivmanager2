@@ -10,11 +10,16 @@ import java.util.List;
  */
 public interface ConfigService {
     List<NgaId> getFids();
-    List<NgaId> getTids();
-    Config getCookie(String name);
-    Config getPath(String name);
-    Config getConfig(String name);
 
+    List<NgaId> getTids();
+
+    Config getCookie(String name);
+
+    Config getPath(String name);
+
+    List<Config> getKeywordList();
+
+    Config getConfig(String name);
 
 
 }

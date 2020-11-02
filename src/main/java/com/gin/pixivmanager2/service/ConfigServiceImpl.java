@@ -55,6 +55,11 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
+    public List<Config> getKeywordList() {
+        return configList.stream().filter(c -> "keyword".equals(c.getType())).collect(Collectors.toList());
+    }
+
+    @Override
     public Config getConfig(String name) {
         return configList.stream().filter(c -> name.equals(c.getName())).findFirst().orElse(null);
     }
