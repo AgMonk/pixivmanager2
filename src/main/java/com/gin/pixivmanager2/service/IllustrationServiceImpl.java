@@ -8,6 +8,7 @@ import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.entity.TaskProgress;
 import com.gin.pixivmanager2.util.PixivPost;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,17 @@ import java.util.stream.Collectors;
 public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illustration> implements IllustrationService {
     private final ThreadPoolTaskExecutor requestExecutor;
     private final ProgressService progressService;
+    private final IllustrationDAO illustrationDAO;
 
     /**
      * 作品详情缓存
      */
     private final Map<String, Illustration> illustrationMap = new HashMap<>();
 
-    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
+    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor, ProgressService progressService, IllustrationDAO illustrationDAO) {
         this.requestExecutor = requestExecutor;
         this.progressService = progressService;
+        this.illustrationDAO = illustrationDAO;
     }
 
     /**
@@ -125,6 +128,20 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
             }
         }
         return new ArrayList<>(map.values());
+    }
+
+    @Scheduled(cron = "0 8/20 * * * ?")
+    public void autoUpdate() {
+        long t = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000;
+        QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id")
+                .isNull("lastUpdate").or().le("lastUpdate", t)
+                .orderByDesc("id").last("limit 0,10");
+        List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
+        log.info("自动更新详情 {}", idList);
+
+        findList(idList, 0, false);
+
     }
 
 

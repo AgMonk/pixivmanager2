@@ -19,13 +19,17 @@ public class ProgressServiceImpl implements ProgressService {
     @Override
     public TaskProgress add(String type) {
         TaskProgress taskProgress = new TaskProgress(type);
-        list.add(taskProgress);
+        synchronized (list) {
+            list.add(taskProgress);
+        }
         return taskProgress;
     }
 
     @Override
     public boolean remove(TaskProgress taskProgress) {
-        return list.removeIf(t -> t.getId().equals(taskProgress.getId()));
+        synchronized (list) {
+            return list.removeIf(t -> t.getId().equals(taskProgress.getId()));
+        }
     }
 
     @Override
