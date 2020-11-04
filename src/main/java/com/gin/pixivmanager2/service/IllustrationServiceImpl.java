@@ -114,13 +114,14 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
         if (needPost.size() > 0) {
             TaskProgress detailProgress = progressService.add("详情任务");
-            List<Illustration> list = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
+            PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
                     .map(Illustration::parse)
                     .filter(i -> i.getBookmarkCount() > minBookCount)
-                    .peek(i -> {
+                    .forEach(i -> {
                         map.put(i.getId(), i);
                         illustrationMap.put(i.getId(), i);
-                    }).collect(Collectors.toList());
+                    });
+            List<Illustration> list = map.values().stream().peek(i -> i.setLastUpdate(System.currentTimeMillis())).collect(Collectors.toList());
             progressService.remove(detailProgress);
             saveOrUpdateBatch(list);
             if (newDetailOnly) {
@@ -130,7 +131,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         return new ArrayList<>(map.values());
     }
 
-    @Scheduled(cron = "0 8/20 * * * ?")
+    @Scheduled(cron = "0 8/10 * * * ?")
     public void autoUpdate() {
         long t = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000;
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
