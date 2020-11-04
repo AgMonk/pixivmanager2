@@ -359,7 +359,7 @@ public class PixivPost {
             }
         }
         List<List<JSONObject>> search = TasksUtil.executeTasks(tasks, 60, executor, "search", 3);
-        
+
         return search.stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
@@ -449,12 +449,6 @@ public class PixivPost {
         }
         return null;
     }
-
-    public static void main(String[] args) {
-        JSONObject detail = detail("84525393", null);
-        log.info("执行完毕");
-    }
-
 
     /**
      * 进度+1

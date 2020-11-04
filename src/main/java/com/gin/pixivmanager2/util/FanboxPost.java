@@ -2,7 +2,6 @@ package com.gin.pixivmanager2.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.gin.pixivmanager2.entity.FanboxItem;
 
 /**
  * fanbox请求
@@ -58,20 +57,4 @@ public class FanboxPost {
         return null;
     }
 
-    public static void main(String[] args) {
-        String cookie = "p_ab_id=1; p_ab_id_2=3; p_ab_d_id=1331259489; _ga=GA1.2.453670194.1595292215; privacy_policy_agreement=2; FANBOXSESSID=57680761_6TbM7A4j9KZGvl702plY3YiM8QnVAmWw; _gid=GA1.2.2123714715.1603070156";
-//        JSONArray array = listCreator("turisasu", cookie);
-        JSONArray array = listSupporting(cookie, 300);
-        JSONObject jsonObject = array.getJSONObject(1);
-//        JSONObject jsonObject = postId("1534199", cookie);
-//        JSONObject jsonObject = postId("1524728", cookie);
-//        JSONObject jsonObject = postId("1530491", cookie);
-        FanboxItem item = new FanboxItem(jsonObject);
-
-        System.err.println(item);
-
-//        item.getUrlMap().forEach((s, s2) -> {
-//            System.err.println(item.getParentPath() + "/" + s + " >> " + s2);
-//        });
-    }
 }
