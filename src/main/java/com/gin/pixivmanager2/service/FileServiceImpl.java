@@ -45,6 +45,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void download(Illustration illustration, String type) {
         log.info("添加下载队列 {}个", illustration.getPageCount());
+        
         saveBatch(getDownloadingList(illustration, type).collect(Collectors.toList()));
     }
 
@@ -199,8 +200,8 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
                     }
                     if (file.exists()) {
-                        String path = file.getPath();
-                        log.info("下载完毕 {}", path.replace("\\", "/").replace(rootPath, ""));
+                        String path = file.getPath().replace("\\", "/").replace(rootPath, "");
+                        log.info("下载完毕 {}", path.substring(0, path.contains("]") ? path.indexOf("]") + 1 : Math.min(30, path.length())));
                         removeById(f.getId());
                     } else {
                         Matcher matcher = ILLUSTRATED_PATTERN.matcher(f.getUrl());
