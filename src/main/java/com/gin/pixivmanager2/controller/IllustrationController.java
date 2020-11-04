@@ -1,9 +1,7 @@
 package com.gin.pixivmanager2.controller;
 
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.service.FileServiceImpl;
 import com.gin.pixivmanager2.service.IllustrationService;
-import com.gin.pixivmanager2.util.SpringContextUtil;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,9 +38,7 @@ public class IllustrationController {
 
     @RequestMapping("test")
     public Object test(String idString) {
-        return SpringContextUtil.getBean(FileServiceImpl.class)
-                .getFileMap("未分类");
-
+        return null;
     }
 
 

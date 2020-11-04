@@ -109,12 +109,15 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void archive(Collection<String> pidCollection, String type) {
         Map<String, File> fileMap = getFileMap(type);
+        //如果为null则归档全部
+        pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
         //带_p的pid转为不带_p的pid并去重
-        List<String> list = pidCollection.stream().map(s -> s.substring(0, s.indexOf("_"))).distinct().collect(Collectors.toList());
+        List<String> list = pidCollection.stream().map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length())).distinct().collect(Collectors.toList());
         IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
         List<Illustration> illustrationList = illustrationService.findList(list, 0, false);
+        Collection<String> finalPidCollection = pidCollection;
         illustrationList.forEach(i -> {
-            pidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
+            finalPidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
                 String count = s.substring(s.indexOf("_p") + 2);
                 String destPath = archivePath + "/" + i.getIllustType() + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
                 File destFile = new File(destPath);
@@ -248,9 +251,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         }
                     }
                 }
-                if (!file.getPath().endsWith("zip")) {
-                    map.put(group, file);
-                }
+//                if (!file.getPath().endsWith("zip")) {
+                map.put(group, file);
+//                }
             }
         }
     }

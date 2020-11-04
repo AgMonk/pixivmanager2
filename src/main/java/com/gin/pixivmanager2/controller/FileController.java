@@ -6,6 +6,7 @@ import com.gin.pixivmanager2.service.ConfigService;
 import com.gin.pixivmanager2.service.FileService;
 import com.gin.pixivmanager2.util.SpringContextUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -44,6 +45,19 @@ public class FileController {
         log.info("归档: {}", pid);
         fileService.archive(Arrays.asList(pid.split(",")), type);
         return new Res<>(200, "归档成功", null);
+    }
+
+    @RequestMapping("archiveOld")
+
+    public Res<Void> archiveOld() {
+        log.info("归档旧作品");
+        fileService.archive(null, "old");
+        return new Res<>(200, "归档成功", null);
+    }
+
+    @Scheduled(cron = "30 0/5 * * * ?")
+    public void autoArchiveOld() {
+        archiveOld();
     }
 
     @RequestMapping("getUntagged")

@@ -37,7 +37,7 @@
 <div id="app">
     <div style="position: fixed">
         <select v-model="path" multiple="multiple">
-            <option v-for="(v,k,i) in fileMap" :value="k">{{k}}</option>
+            <option v-for="(v,k,i) in fileMap" :value="k" v-if="!v.includes('.zip')">{{k}}</option>
         </select>
         <br><br>
         <button @click="archive()">归档</button>
