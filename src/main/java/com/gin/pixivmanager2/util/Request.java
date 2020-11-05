@@ -15,6 +15,7 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.net.SocketTimeoutException;
@@ -74,7 +75,7 @@ public class Request {
      * 地址栏参数
      */
     private StringBuilder param = new StringBuilder();
-    private MultipartEntityBuilder entityBuilder;
+    private MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
     private static final Map<String, String> DEFAULT_HEADERS = new HashMap<>();
 
     static {
@@ -114,7 +115,7 @@ public class Request {
      * @return this
      */
     public Request addHeader(String k, String v) {
-        if (v != null && !"".equals(v)) {
+        if (!StringUtils.isEmpty(v)) {
             log.debug("设置header {} -> {}", k, v.substring(0, Math.min(v.length(), 40)) + (v.length() > 40 ? "..." : ""));
             header.put(k, v);
         }
@@ -175,7 +176,7 @@ public class Request {
      * @return this
      */
     public Request setReferer(String referer) {
-        if (referer != null && !"".equals(referer)) {
+        if (!StringUtils.isEmpty(referer)) {
             addHeader("Referer", referer);
         } else {
             int endIndex = url.indexOf("/", url.indexOf("//") + 2);
@@ -191,7 +192,7 @@ public class Request {
      * @return this
      */
     public Request setOrigin(String origin) {
-        if (origin != null && !"".equals(origin)) {
+        if (!StringUtils.isEmpty(origin)) {
             addHeader("Origin", origin);
         } else {
             int endIndex = url.indexOf("/", url.indexOf("//") + 2);
@@ -223,7 +224,7 @@ public class Request {
         entityBuilder = entityBuilder == null ? MultipartEntityBuilder.create() : entityBuilder;
         if (!file.exists()) {
             log.error("文件不存在 {}", file.getPath());
-        } else if (name != null && !"".equals(name)) {
+        } else if (!StringUtils.isEmpty(name)) {
             log.debug("添加文件：{} 文件名：{}", name, file.getName());
             entityBuilder.addPart(name, new FileBody(file));
         }
@@ -232,7 +233,7 @@ public class Request {
 
     public Request addParam(String k, Object v) {
         log.debug("添加参数 {} ->{}", k, v);
-        if (v != null && !"".equals(v)) {
+        if (!StringUtils.isEmpty(v)) {
             param.append("&").append(k).append("=").append(encode(String.valueOf(v), encodeEnc));
         }
         return this;
@@ -298,7 +299,7 @@ public class Request {
      */
     public static String decode(String s, String enc) {
         String encode = null;
-        enc = enc == null || "".equals(enc) ? "utf-8" : enc;
+        enc = StringUtils.isEmpty(enc) ? "utf-8" : enc;
         try {
             encode = URLDecoder
                     .decode(s, enc);
@@ -317,7 +318,7 @@ public class Request {
      */
     public static String encode(String s, String enc) {
         String encode = null;
-        enc = enc == null || "".equals(enc) ? "utf-8" : enc;
+        enc = StringUtils.isEmpty(enc) ? "utf-8" : enc;
         try {
             encode = URLEncoder
                     .encode(s, enc)
@@ -477,7 +478,7 @@ public class Request {
                         HttpEntity entity = response.getEntity();
                         String contentType = response.getEntity().getContentType().getValue();
                         log.debug("响应类型 {}", contentType);
-                        if (!contentType.contains("json") && entity.getContentLength() == -1L) {
+                        if (!contentType.contains("json") && !contentType.contains("html") && entity.getContentLength() == -1L) {
                             log.warn("第{}次请求 正文大小错误 重新请求 地址：{}", i + 1, method.getURI());
                             if (i < 5) {
                                 break;
@@ -577,8 +578,9 @@ public class Request {
         return f;
     }
 
-    public void setEncodeEnc(String encodeEnc) {
+    public Request setEncodeEnc(String encodeEnc) {
         this.encodeEnc = encodeEnc;
+        return this;
     }
 
     public static Map<String, Integer> createProgressMap(int size) {
