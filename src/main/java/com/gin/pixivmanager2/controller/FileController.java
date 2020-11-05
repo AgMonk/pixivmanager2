@@ -54,6 +54,12 @@ public class FileController {
         return new Res<>(200, "转发队列添加成功", null);
     }
 
+    public Res<Void> repost(@NotEmpty String pid) {
+        log.info("转发: {}", pid);
+
+        return null;
+    }
+
     @RequestMapping("archiveOld")
     public Res<Void> archiveOld() {
         log.info("归档旧作品");
