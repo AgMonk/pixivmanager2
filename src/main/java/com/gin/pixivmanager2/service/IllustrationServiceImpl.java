@@ -114,18 +114,18 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
         if (needPost.size() > 0) {
             TaskProgress detailProgress = progressService.add("详情任务");
-            PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
+            List<Illustration> newDetails = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
                     .map(Illustration::parse)
                     .filter(i -> i.getBookmarkCount() > minBookCount)
-                    .forEach(i -> {
+                    .peek(i -> {
                         map.put(i.getId(), i);
                         illustrationMap.put(i.getId(), i);
-                    });
+                    }).collect(Collectors.toList());
             List<Illustration> list = map.values().stream().peek(i -> i.setLastUpdate(System.currentTimeMillis())).collect(Collectors.toList());
             progressService.remove(detailProgress);
             saveOrUpdateBatch(list);
             if (newDetailOnly) {
-                return list;
+                return newDetails;
             }
         }
         return new ArrayList<>(map.values());
