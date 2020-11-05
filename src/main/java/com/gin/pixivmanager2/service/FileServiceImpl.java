@@ -6,8 +6,10 @@ import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
+import com.gin.pixivmanager2.util.FilesUtil;
 import com.gin.pixivmanager2.util.Request;
 import com.gin.pixivmanager2.util.SpringContextUtil;
+import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,13 +35,16 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final String rootPath;
     private final String archivePath;
     private final String fanboxCookie;
+    private final IllustrationService illustrationService;
+    private final ThreadPoolTaskExecutor fileExecutor = TasksUtil.getExecutor("file", 2);
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
-    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService) {
+    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService) {
         this.downloadExecutor = downloadExecutor;
 
         this.rootPath = configService.getPath("rootPath").getValue();
+        this.illustrationService = illustrationService;
         this.archivePath = rootPath + "/archive";
         this.fanboxCookie = configService.getCookie("fanbox").getValue();
     }
@@ -120,7 +127,6 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
         //带_p的pid转为不带_p的pid并去重
         List<String> list = pidCollection.stream().map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length())).distinct().collect(Collectors.toList());
-        IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
         List<Illustration> illustrationList = illustrationService.findList(list, 0, false);
         Collection<String> finalPidCollection = pidCollection;
         illustrationList.forEach(i -> {
@@ -167,6 +173,41 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                 }
             });
         });
+
+    }
+
+    /**
+     * 把图片加入转发队列（复制到转发目录）
+     *
+     * @param pidCollection
+     * @param type
+     */
+    @Override
+    public void addRepostQueue(Collection<String> pidCollection, String type) {
+        List<Callable<Void>> tasks = new ArrayList<>();
+        Map<String, File> fileMap = getFileMap(type);
+        fileMap.keySet().stream().filter(pidCollection::contains).forEach(k -> {
+            File srcFile = fileMap.get(k);
+            String srcPath = srcFile.getPath();
+            String destPath = rootPath + "/转发/" + k + srcPath.substring(srcPath.lastIndexOf("."));
+            File destFile = new File(destPath);
+            if (destFile.exists()) {
+                log.info("文件已存在 {}", destFile);
+            } else {
+                tasks.add(() -> {
+                    try {
+                        FilesUtil.copyFile(srcFile, destFile);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                });
+            }
+        });
+
+        TasksUtil.executeTasks(tasks, 60, fileExecutor, "file", 2);
+        
+        archive(pidCollection, type);
 
     }
 

@@ -47,8 +47,14 @@ public class FileController {
         return new Res<>(200, "归档成功", null);
     }
 
-    @RequestMapping("archiveOld")
+    @RequestMapping("addRepostQueue")
+    public Res<Void> addRepostQueue(@NotEmpty String pid, @RequestParam(defaultValue = "未分类") String type) {
+        log.info("添加转发队列: {}", pid);
+        fileService.addRepostQueue(Arrays.asList(pid.split(",")), type);
+        return new Res<>(200, "转发队列添加成功", null);
+    }
 
+    @RequestMapping("archiveOld")
     public Res<Void> archiveOld() {
         log.info("归档旧作品");
         fileService.archive(null, "old");
@@ -60,9 +66,9 @@ public class FileController {
         archiveOld();
     }
 
-    @RequestMapping("getUntagged")
-    public Map<String, String> getUntagged() {
-        Map<String, File> untagged = fileService.getFileMap("未分类");
+    @RequestMapping("getFileMap")
+    public Map<String, String> getFileMap(@RequestParam(defaultValue = "未分类") String type) {
+        Map<String, File> untagged = fileService.getFileMap(type);
         String rootPath = SpringContextUtil.getBean(ConfigService.class).getPath("rootPath").getValue();
         TreeMap<String, String> map = new TreeMap<>((s1, s2) -> {
             if (!s1.contains("_p") || !s2.contains("_p")) {

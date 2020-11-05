@@ -35,6 +35,8 @@ public interface FileService {
 
     Map<String, File> getFileMap(String type);
 
+    void addRepostQueue(Collection<String> pidCollection, String type);
+
     void startDownload();
 
     List<DownloadingFile> getDownloadingFileList();

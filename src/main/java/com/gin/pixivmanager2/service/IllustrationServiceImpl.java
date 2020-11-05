@@ -139,7 +139,9 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
                 .isNull("lastUpdate").or().le("lastUpdate", t).or().isNull("bookmarkCount")
                 .orderByDesc("id").last("limit 0,20");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
-        log.info("自动更新详情 {}", idList);
+        
+        log.info("自动更新详情 {}", idList.subList(0, 10));
+        log.info("自动更新详情 {}", idList.subList(10, 20));
 
         findList(idList, 0, false);
 

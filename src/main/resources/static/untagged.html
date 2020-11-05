@@ -35,6 +35,11 @@
 </head>
 <body>
 <div id="app">
+    <select v-model="type" @change="getFileMap()">
+        <option>未分类</option>
+        <option>搜索</option>
+        <option>转发</option>
+    </select>
     <div style="position: fixed">
         <select v-model="path" multiple="multiple">
             <option v-for="(v,k,i) in fileMap" :value="k" v-if="!v.includes('.zip')">{{k}}</option>
@@ -61,13 +66,14 @@
     const app = new Vue({
         el: "#app",
         data: {
+            type: "未分类",
             width: 1000,
             path: [],
             fileMap: {},
         },
         methods: {
-            getUntagged() {
-                get("/file/getUntagged", null, function (res) {
+            getFileMap() {
+                get("/file/getFileMap", {type: this.type}, function (res) {
                     _this.fileMap = res.data;
                     _this.width = window.innerWidth;
                     if (_this.width > 800) {
@@ -117,10 +123,22 @@
                     this.path.push(pid);
                 }
                 console.log(this.path)
+            },
+            addRepostQueue() {
+                let s = _this.path;
+                console.log("添加转发： " + s)
+                for (let i = 0; i < s.length; i++) {
+                    Vue.delete(_this.fileMap, s[i])
+                    let a = Object.keys(_this.fileMap);
+                    _this.path = [a[0], a[1], a[2], a[3]];
+                }
+                get("/file/addRepostQueue", {pid: s.toString()}, function (res) {
+                    console.log(res.data)
+                })
             }
         },
         created() {
-            this.getUntagged();
+            this.getFileMap();
 
             setInterval(function () {
                 _this.width = window.innerWidth
@@ -137,6 +155,10 @@
                 if (e.keyCode === 97) {
                     //归档
                     _this.archive()
+                }
+
+                if (e.keyCode === 114) {
+                    _this.addRepostQueue()
                 }
             }
 
