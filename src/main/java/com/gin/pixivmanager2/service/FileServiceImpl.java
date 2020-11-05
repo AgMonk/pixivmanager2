@@ -45,13 +45,16 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void download(Illustration illustration, String type) {
         log.info("添加下载队列 {}个", illustration.getPageCount());
-        
+
         saveBatch(getDownloadingList(illustration, type).collect(Collectors.toList()));
     }
 
     @Override
     public void download(Collection<Illustration> illustrations, String type) {
         int sum = illustrations.stream().mapToInt(Illustration::getPageCount).sum();
+        if (sum == 0) {
+            return;
+        }
         log.info("添加下载队列 {}个", sum);
         saveBatch(illustrations.stream().flatMap(i -> getDownloadingList(i, type)).collect(Collectors.toList()));
     }
@@ -110,6 +113,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void archive(Collection<String> pidCollection, String type) {
         Map<String, File> fileMap = getFileMap(type);
+        if (fileMap.size() == 0) {
+            return;
+        }
         //如果为null则归档全部
         pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
         //带_p的pid转为不带_p的pid并去重
