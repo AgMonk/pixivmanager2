@@ -136,8 +136,8 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         long t = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000;
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
         queryWrapper.select("id")
-                .isNull("lastUpdate").or().le("lastUpdate", t)
-                .orderByDesc("id").last("limit 0,10");
+                .isNull("lastUpdate").or().le("lastUpdate", t).or().isNull("bookmarkCount")
+                .orderByDesc("id").last("limit 0,20");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
         log.info("自动更新详情 {}", idList);
 
@@ -158,6 +158,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         return ill == null
                 || ill.getLastUpdate() == null
                 || System.currentTimeMillis() - ill.getLastUpdate() > l
+                || ill.getBookmarkCount() == null
                 || ill.getBookmarkCount() < minBookCount;
     }
 }
