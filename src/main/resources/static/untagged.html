@@ -113,11 +113,19 @@
             },
             del() {
                 let s = _this.path;
+                let b = this.width > 800;
                 console.log("删除： " + s)
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
-                    let a = Object.keys(_this.fileMap);
+                }
+                let a = Object.keys(_this.fileMap);
+                if (_this.fileMap.length === 0) {
+                    _this.getFileMap();
+                }
+                if (b) {
                     _this.path = [a[0], a[1], a[2], a[3]];
+                } else {
+                    _this.path = [a[0]];
                 }
                 get("/file/del", {pid: s.toString()}, function (res) {
                     console.log(res.data)
@@ -125,11 +133,19 @@
             },
             archive() {
                 let s = _this.path;
+                let b = this.width > 800;
                 console.log("归档： " + s)
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
-                    let a = Object.keys(_this.fileMap);
+                }
+                if (_this.fileMap.length === 0) {
+                    _this.getFileMap();
+                }
+                let a = Object.keys(_this.fileMap);
+                if (b) {
                     _this.path = [a[0], a[1], a[2], a[3]];
+                } else {
+                    _this.path = [a[0]];
                 }
                 get("/file/archive", {pid: s.toString()}, function (res) {
                     console.log(res.data)
@@ -175,7 +191,7 @@
             },
             repost() {
                 let p = _this.param;
-                p.pid = _this.path;
+                p.pid = _this.path.toString();
                 get("/nga/repost", p, function (res) {
                     let url = res.data;
                     console.log(url);

@@ -11,6 +11,8 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.gin.pixivmanager2.util.PixivPost.URL_ARTWORK_PREFIX;
+
 /**
  * @author bx002
  */
@@ -50,7 +52,7 @@ public class NgaServiceImpl implements NgaService {
                 repostMap.put(k, v);
             }
         });
-        log.info("转发文件 {}", repostMap.values());
+        log.info("转发文件 {}", repostMap.keySet());
 
         NgaPost ngaPost = NgaPost.create(cookie, fid, tid, action);
 
@@ -62,11 +64,12 @@ public class NgaServiceImpl implements NgaService {
         //pixiv卡片
         for (Illustration detail : details) {
             String pid = detail.getId();
-            String urlCode = NgaPost.getUrlCode("Source Url", "https://www.pixiv.net/artworks/" + pid) + "\n";
+            String urlCode = NgaPost.getUrlCode("Source Url", URL_ARTWORK_PREFIX + pid) + "\n";
             String tag = "标签:" + detail.getTagString() + "\n";
             String imgCode = attachmentsMap.keySet().stream()
                     .filter(k -> k.contains(pid)).map(ngaPost::getAttachmentsCode)
                     .collect(Collectors.joining("\n"));
+//            tag="";
             String card = NgaPost.getCollapse(detail.getTitle(), urlCode + tag + imgCode, pid);
             sb.append(card);
         }
@@ -76,7 +79,14 @@ public class NgaServiceImpl implements NgaService {
         String send = ngaPost.send();
 
         if (send != null) {
-
+            pidCollection.forEach(p -> {
+                File file = fileMap.get(p);
+                if (file.delete()) {
+                    log.info("删除已成功转发文件 {}", file);
+                } else {
+                    log.info("文件删除失败 {}", file);
+                }
+            });
         }
         return send;
     }

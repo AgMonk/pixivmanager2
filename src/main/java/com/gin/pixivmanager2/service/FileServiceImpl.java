@@ -6,10 +6,7 @@ import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.util.FilesUtil;
-import com.gin.pixivmanager2.util.Request;
-import com.gin.pixivmanager2.util.SpringContextUtil;
-import com.gin.pixivmanager2.util.TasksUtil;
+import com.gin.pixivmanager2.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -206,7 +203,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         });
 
         TasksUtil.executeTasks(tasks, 60, fileExecutor, "file", 2);
-        
+
         archive(pidCollection, type);
 
     }
@@ -255,7 +252,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         if (matcher.find()) {
                             String group = matcher.group();
                             String id = group.substring(0, group.indexOf("_"));
-                            log.warn("下载失败 {}", "https://www.pixiv.net/artworks/" + id);
+                            log.warn("下载失败 {}", PixivPost.URL_ARTWORK_PREFIX + id);
 
                             log.info("尝试更新作品详情 {}", id);
                             IllustrationServiceImpl service = SpringContextUtil.getBean(IllustrationServiceImpl.class);

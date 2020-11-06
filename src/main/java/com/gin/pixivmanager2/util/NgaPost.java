@@ -341,11 +341,11 @@ public class NgaPost {
             attachmentsCheckBuffer.append(attachmentsCheck).append("\t");
             attachmentsMap.put(name, url);
 
-            if (file.delete()) {
-                log.debug("删除文件 {}", file);
-            } else {
-                log.warn("删除失败 {}", file);
-            }
+//            if (file.delete()) {
+//                log.debug("删除文件 {}", file);
+//            } else {
+//                log.warn("删除失败 {}", file);
+//            }
         }
     }
 

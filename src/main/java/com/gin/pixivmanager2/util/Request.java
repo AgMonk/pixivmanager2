@@ -451,7 +451,7 @@ public class Request {
 //                }
             }
         } else {
-            if (!contentType.contains("json")) {
+            if (!contentType.contains("json") && !contentType.contains("javascript")) {
                 log.info("请求结果非文件: {}", contentType);
             }
             result = EntityUtils.toString(entity, decodeEnc);

@@ -15,12 +15,13 @@ import java.util.stream.Collectors;
  * @author bx002
  */
 public class PixivPost {
+    public static final String URL_ARTWORK_PREFIX = "https://www.pixiv.net/artworks/";
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PixivPost.class);
     /**
      * 作品详情接口(cookie可选)
      */
-    final static String URL_ILLUST_DETAIL = "https://www.pixiv.net/ajax/illust/";
+    public final static String URL_ILLUST_DETAIL = "https://www.pixiv.net/ajax/illust/";
     /**
      * 获取收藏作品接口 需要cookie
      */

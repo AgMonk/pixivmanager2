@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 
 import static com.gin.pixivmanager2.service.FileServiceImpl.ILLUSTRATED_PATTERN;
+import static com.gin.pixivmanager2.util.PixivPost.URL_ARTWORK_PREFIX;
 
 @Data
 @AllArgsConstructor
@@ -94,7 +95,7 @@ public class DownloadingFile implements Comparable<DownloadingFile> {
         if (matcher.find()) {
             String pidCount = getPidCount();
             pidCount = pidCount.substring(0, pidCount.indexOf("_"));
-            return "https://www.pixiv.net/artworks/" + pidCount;
+            return URL_ARTWORK_PREFIX + pidCount;
         }
         return null;
     }

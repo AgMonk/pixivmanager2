@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.gin.pixivmanager2.util.PixivPost;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.gin.pixivmanager2.util.PixivPost.URL_ARTWORK_PREFIX;
 
 /**
  * @author bx002
@@ -243,11 +246,11 @@ public class Illustration {
     }
 
     public String getUrl() {
-        return "https://www.pixiv.net/artworks/" + id;
+        return URL_ARTWORK_PREFIX + id;
     }
 
     public String getUrlAjax() {
-        return "https://www.pixiv.net/ajax/illust/" + id;
+        return PixivPost.URL_ILLUST_DETAIL + id;
     }
 
     private String clean(String s) {
