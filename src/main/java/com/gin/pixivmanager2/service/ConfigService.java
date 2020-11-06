@@ -22,4 +22,5 @@ public interface ConfigService {
     Config getConfig(String name);
 
 
+    List<Config> getConfigList();
 }

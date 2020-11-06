@@ -7,8 +7,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Matcher;
@@ -80,7 +82,7 @@ public class NgaPost {
     /**
      * 已上传附件的 name 对应的url
      */
-    Map<String, String> attachmentsMap = new HashMap<>();
+    TreeMap<String, String> attachmentsMap = new TreeMap<>(Comparator.naturalOrder());
 
     public static NgaPost create(String cookie, String fid, String tid, String action) {
         return new NgaPost(cookie, fid, tid, action);
@@ -382,7 +384,7 @@ public class NgaPost {
         this.action = action;
     }
 
-    public Map<String, String> getAttachmentsMap() {
+    public TreeMap<String, String> getAttachmentsMap() {
         return attachmentsMap;
     }
 

@@ -40,6 +40,22 @@
         <option>搜索</option>
         <option>转发</option>
     </select>
+    <div v-if="type==='转发'">
+        <select v-model="param.fid">
+            <option v-for="(v,k) in fidList" :value="v.id">{{v.name}}</option>
+        </select>
+        <select v-model="param.tid">
+            <option v-for="(v,k) in tidList" :value="v.id">{{v.name}}</option>
+        </select>
+        <select v-model="param.username">
+            <option v-for="(v,k) in user" :value="v">{{v}}</option>
+        </select>
+        <select v-model="param.action">
+            <option value="reply">回复</option>
+            <option value="new">主题</option>
+        </select>
+        <button @click="repost()">转发</button>
+    </div>
     <div style="position: fixed">
         <select v-model="path" multiple="multiple">
             <option v-for="(v,k,i) in fileMap" :value="k" v-if="!v.includes('.zip')">{{k}}</option>
@@ -69,7 +85,11 @@
             type: "未分类",
             width: 1000,
             path: [],
+            tidList: [],
+            fidList: [],
+            user: [],
             fileMap: {},
+            param: {fid: 0, tid: 0, username: "", action: "reply"},
         },
         methods: {
             getFileMap() {
@@ -135,10 +155,40 @@
                 get("/file/addRepostQueue", {pid: s.toString()}, function (res) {
                     console.log(res.data)
                 })
+            },
+            getNgaData() {
+                get("/nga/getTidList", null, function (res) {
+                    console.log(res.data);
+                    _this.tidList = res.data;
+                    _this.param.tid = _this.tidList[1].id;
+                })
+                get("/nga/getFidList", null, function (res) {
+                    console.log(res.data);
+                    _this.fidList = res.data;
+                    _this.param.fid = _this.fidList[1].id;
+                })
+                get("/nga/getUser", null, function (res) {
+                    console.log(res.data);
+                    _this.user = res.data;
+                    _this.param.username = _this.user[0];
+                })
+            },
+            repost() {
+                let p = _this.param;
+                p.pid = _this.path;
+                get("/nga/repost", p, function (res) {
+                    let url = res.data;
+                    console.log(url);
+                    if (url.includes("http")) {
+                        window.open(url);
+                    }
+                    _this.getFileMap();
+                })
             }
         },
         created() {
             this.getFileMap();
+            this.getNgaData();
 
             setInterval(function () {
                 _this.width = window.innerWidth

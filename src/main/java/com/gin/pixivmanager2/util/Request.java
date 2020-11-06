@@ -471,14 +471,18 @@ public class Request {
                 log.debug("第{}次请求 地址：{}", i + 1, method.getURI());
                 CloseableHttpResponse response = client.execute(method);
                 int statusCode = response.getStatusLine().getStatusCode();
+                HttpEntity entity = null;
                 switch (statusCode) {
                     case HttpStatus.SC_OK:
                         end = System.currentTimeMillis();
                         log.debug("第{}次请求 成功 地址：{} 耗时：{}", i + 1, method.getURI(), timeCost(start, end));
-                        HttpEntity entity = response.getEntity();
+                        entity = response.getEntity();
                         String contentType = response.getEntity().getContentType().getValue();
                         log.debug("响应类型 {}", contentType);
-                        if (!contentType.contains("json") && !contentType.contains("html") && entity.getContentLength() == -1L) {
+                        if (!contentType.contains("json")
+                                && !contentType.contains("html")
+                                && !contentType.contains("javascript")
+                                && entity.getContentLength() == -1L) {
                             log.warn("第{}次请求 正文大小错误 重新请求 地址：{}", i + 1, method.getURI());
                             if (i < 5) {
                                 break;
@@ -489,7 +493,7 @@ public class Request {
                         handleEntity(i, entity, contentType);
                         return this;
                     case HttpStatus.SC_BAD_GATEWAY:
-                        log.debug("第{}次请求 失败 服务器错误({})", i + 1, statusCode);
+                        log.debug("第{}次请求 失败 服务器错误({}) {}", i + 1, statusCode, EntityUtils.toString(entity, decodeEnc));
                         try {
                             Thread.sleep(10 * 1000);
                         } catch (InterruptedException e) {

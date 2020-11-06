@@ -63,4 +63,9 @@ public class ConfigServiceImpl implements ConfigService {
     public Config getConfig(String name) {
         return configList.stream().filter(c -> name.equals(c.getName())).findFirst().orElse(null);
     }
+
+    @Override
+    public List<Config> getConfigList() {
+        return configList;
+    }
 }
