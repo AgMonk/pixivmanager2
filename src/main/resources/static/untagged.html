@@ -119,9 +119,7 @@
                     Vue.delete(_this.fileMap, s[i])
                 }
                 let a = Object.keys(_this.fileMap);
-                if (a.length === 0) {
-                    _this.getFileMap();
-                }
+
                 if (b) {
                     _this.path = [a[0], a[1], a[2], a[3]];
                 } else {
@@ -129,6 +127,9 @@
                 }
                 get("/file/del", {pid: s.toString(), type: this.type}, function (res) {
                     console.log(res.data)
+                    if (a.length === 0) {
+                        _this.getFileMap();
+                    }
                 })
             },
             archive() {
@@ -139,9 +140,7 @@
                     Vue.delete(_this.fileMap, s[i])
                 }
                 let a = Object.keys(_this.fileMap);
-                if (a.length === 0) {
-                    _this.getFileMap();
-                }
+
                 if (b) {
                     _this.path = [a[0], a[1], a[2], a[3]];
                 } else {
@@ -149,6 +148,9 @@
                 }
                 get("/file/archive", {pid: s.toString(), type: this.type}, function (res) {
                     console.log(res.data)
+                    if (a.length === 0) {
+                        _this.getFileMap();
+                    }
                 })
             },
             remove(pid) {

@@ -114,7 +114,7 @@ public class NgaPost {
                 .getResult();
 
 
-        if (result.contains("发贴完毕")) {
+        if (result != null && result.contains("发贴完毕")) {
             if (action.equals(ACTION_REPLY)) {
                 Matcher matcher = PATTERN_PID.matcher(result);
                 if (matcher.find()) {
