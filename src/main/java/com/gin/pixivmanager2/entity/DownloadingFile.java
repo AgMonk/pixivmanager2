@@ -29,7 +29,7 @@ public class DownloadingFile implements Comparable<DownloadingFile> {
     final public static String FILE_TYPE_FANBOX = "fanbox";
     final public static String FILE_TYPE_SEARCH_RESULTS = "搜索";
     final public static String[] TYPE_LIST = {
-            FILE_TYPE_UNTAGGED, FILE_TYPE_FANBOX, FILE_TYPE_SEARCH_RESULTS
+            FILE_TYPE_FANBOX, FILE_TYPE_UNTAGGED, FILE_TYPE_SEARCH_RESULTS
     };
 
 
@@ -121,19 +121,18 @@ public class DownloadingFile implements Comparable<DownloadingFile> {
         if (this.equals(o)) {
             return 0;
         }
-        DownloadingFile that = o;
         Integer numThis = null;
         Integer numThat = null;
         for (int i = 0; i < TYPE_LIST.length; i++) {
             if (this.type.startsWith(TYPE_LIST[i])) {
                 numThis = i;
             }
-            if (that.type.startsWith(TYPE_LIST[i])) {
+            if (o.type.startsWith(TYPE_LIST[i])) {
                 numThat = i;
             }
         }
         if (numThis == null && numThat == null) {
-            return -1 * this.path.compareTo(that.path);
+            return -1 * this.path.compareTo(o.path);
         }
         if (numThis != null && numThat == null) {
             return -1;
@@ -142,7 +141,7 @@ public class DownloadingFile implements Comparable<DownloadingFile> {
             return 1;
         }
         if (numThis.equals(numThat)) {
-            return -1 * this.path.compareTo(that.path);
+            return -1 * this.path.compareTo(o.path);
         }
 
         return numThis - numThat;
