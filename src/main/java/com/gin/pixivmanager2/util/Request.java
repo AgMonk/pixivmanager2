@@ -516,7 +516,11 @@ public class Request {
 
             } catch (RuntimeException e) {
                 String message = e.getMessage();
-                log.warn(message);
+                if (message != null && message.contains("302")) {
+                    log.debug(message);
+                } else {
+                    log.warn(message);
+                }
 //                if (message != null && !message.contains("302")) {
 //                    e.printStackTrace();
 //                }

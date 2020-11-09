@@ -58,7 +58,7 @@
     </div>
     <div style="position: fixed">
         <select v-model="path" multiple="multiple">
-            <option v-for="(v,k,i) in fileMap" :value="k" v-if="!v.includes('.zip')">{{k}}</option>
+            <option v-for="(v,k,i) in fileMap">{{k}}</option>
         </select>
         <br><br>
         <button @click="archive()">归档</button>
@@ -119,7 +119,7 @@
                     Vue.delete(_this.fileMap, s[i])
                 }
                 let a = Object.keys(_this.fileMap);
-                if (_this.fileMap.length === 0) {
+                if (a.length === 0) {
                     _this.getFileMap();
                 }
                 if (b) {
@@ -127,7 +127,7 @@
                 } else {
                     _this.path = [a[0]];
                 }
-                get("/file/del", {pid: s.toString()}, function (res) {
+                get("/file/del", {pid: s.toString(), type: this.type}, function (res) {
                     console.log(res.data)
                 })
             },
@@ -138,16 +138,16 @@
                 for (let i = 0; i < s.length; i++) {
                     Vue.delete(_this.fileMap, s[i])
                 }
-                if (_this.fileMap.length === 0) {
+                let a = Object.keys(_this.fileMap);
+                if (a.length === 0) {
                     _this.getFileMap();
                 }
-                let a = Object.keys(_this.fileMap);
                 if (b) {
                     _this.path = [a[0], a[1], a[2], a[3]];
                 } else {
                     _this.path = [a[0]];
                 }
-                get("/file/archive", {pid: s.toString()}, function (res) {
+                get("/file/archive", {pid: s.toString(), type: this.type}, function (res) {
                     console.log(res.data)
                 })
             },
