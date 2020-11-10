@@ -38,4 +38,18 @@ public class FilesUtil {
             outputChannel.close();
         }
     }
+
+    public static void delete(File file) {
+        File[] files = file.listFiles();
+        if (file.isDirectory() && files != null) {
+            for (File f : files) {
+                delete(f);
+            }
+        }
+        if (file.delete()) {
+            log.debug("删除文件 {}", file);
+        } else {
+            log.warn("删除失败 {}", file);
+        }
+    }
 }

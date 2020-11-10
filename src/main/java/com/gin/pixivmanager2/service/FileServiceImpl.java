@@ -34,6 +34,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final String fanboxCookie;
     private final IllustrationService illustrationService;
     private final ThreadPoolTaskExecutor fileExecutor = TasksUtil.getExecutor("file", 2);
+    private final ThreadPoolTaskExecutor gifExecutor = TasksUtil.getExecutor("gif", 1);
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
@@ -244,8 +245,16 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
                     }
                     if (file.exists()) {
-                        String path = file.getPath().replace("\\", "/").replace(rootPath, "");
+                        String filePath = file.getPath();
+                        String path = filePath.replace("\\", "/").replace(rootPath, "");
                         log.info("下载完毕 {}", path.substring(0, path.contains("]") ? path.indexOf("]") + 1 : Math.min(30, path.length())));
+
+                        //如果是zip文件，加入解压制作gif队列
+                        if (filePath.endsWith(".zip")) {
+                            gifExecutor.execute(() -> GifUtil.zip2Gif(filePath));
+                        }
+
+
                         removeById(f.getId());
                     } else {
                         Matcher matcher = ILLUSTRATED_PATTERN.matcher(f.getUrl());
