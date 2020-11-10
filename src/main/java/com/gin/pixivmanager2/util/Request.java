@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -465,17 +466,18 @@ public class Request {
         String timeoutMsg = "请求超时({}) 地址：{}";
         String msg = " 未定义错误 ";
         for (int i = 0; i < maxTimes; i++) {
+            URI uri = method.getURI();
             try {
                 long start = System.currentTimeMillis();
                 long end;
-                log.debug("第{}次请求 地址：{}", i + 1, method.getURI());
+                log.debug("第{}次请求 地址：{}", i + 1, uri);
                 CloseableHttpResponse response = client.execute(method);
                 int statusCode = response.getStatusLine().getStatusCode();
                 HttpEntity entity = null;
                 switch (statusCode) {
                     case HttpStatus.SC_OK:
                         end = System.currentTimeMillis();
-                        log.debug("第{}次请求 成功 地址：{} 耗时：{}", i + 1, method.getURI(), timeCost(start, end));
+                        log.debug("第{}次请求 成功 地址：{} 耗时：{}", i + 1, uri, timeCost(start, end));
                         entity = response.getEntity();
                         String contentType = response.getEntity().getContentType().getValue();
                         log.debug("响应类型 {}", contentType);
@@ -483,11 +485,12 @@ public class Request {
                                 && !contentType.contains("html")
                                 && !contentType.contains("javascript")
                                 && entity.getContentLength() == -1L) {
-                            log.warn("第{}次请求 正文大小错误 重新请求 地址：{}", i + 1, method.getURI());
+                            String shortUrl = uri.toString().substring(uri.toString().lastIndexOf("/"));
+                            log.debug("第{}次请求 正文大小错误 重新请求 地址：{}", i + 1, shortUrl);
                             if (i < 5) {
                                 break;
                             } else {
-                                log.warn("第{}次请求 正文大小错误 强行下载  地址：{}", i + 1, method.getURI());
+                                log.warn("第{}次请求 正文大小错误 强行下载  地址：{}", i + 1, shortUrl);
                             }
                         }
                         handleEntity(i, entity, contentType);
@@ -502,15 +505,15 @@ public class Request {
                         break;
                     case HttpStatus.SC_INTERNAL_SERVER_ERROR:
                         msg = " 服务器错误 ";
-                        throw new RuntimeException(statusCode + msg + method.getURI());
+                        throw new RuntimeException(statusCode + msg + uri);
                     case HttpStatus.SC_NOT_FOUND:
                         msg = " 地址不存在 ";
-                        throw new RuntimeException(statusCode + msg + method.getURI());
+                        throw new RuntimeException(statusCode + msg + uri);
                     case HttpStatus.SC_MOVED_TEMPORARILY:
                         msg = " 连接被重定向 ";
-                        throw new RuntimeException(statusCode + msg + method.getURI());
+                        throw new RuntimeException(statusCode + msg + uri);
                     default:
-                        throw new RuntimeException(statusCode + msg + method.getURI());
+                        throw new RuntimeException(statusCode + msg + uri);
                 }
 
 
@@ -527,11 +530,11 @@ public class Request {
                 break;
             } catch (SocketTimeoutException e) {
                 if (maxTimes == i + 1) {
-                    log.error(timeoutMsg, i + 1, method.getURI());
+                    log.error(timeoutMsg, i + 1, uri);
                 } else if ((maxTimes / 3) == i + 1 || (maxTimes * 2 / 3) == i + 1) {
-                    log.debug(timeoutMsg, i + 1, method.getURI());
+                    log.debug(timeoutMsg, i + 1, uri);
                 } else {
-                    log.debug(timeoutMsg, i + 1, method.getURI());
+                    log.debug(timeoutMsg, i + 1, uri);
                 }
                 if (progressMap != null) {
                     progressMap.put("count", 0);

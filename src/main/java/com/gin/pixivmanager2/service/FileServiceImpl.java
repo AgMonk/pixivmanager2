@@ -223,11 +223,13 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             queryWrapper.notIn("id", downloadingId);
         }
         List<DownloadingFile> list = list(queryWrapper);
+        if (list.size() > 0) {
+            log.info("下载队列中有 {} 个文件", list.size());
+        }
         Collections.sort(list);
         list = list.subList(0, Math.min(list.size(), maxPoolSize - activeCount));
 
         if (list.size() > 0) {
-            log.info("载入下载队列 {}个", list.size());
             list.forEach(f -> {
                 downloadExecutor.execute(() -> {
                     synchronized (downloadingFileList) {
