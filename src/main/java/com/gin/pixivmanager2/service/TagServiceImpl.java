@@ -91,6 +91,7 @@ public class TagServiceImpl extends ServiceImpl<TagDAO, Tag> implements TagServi
     public void setTranslation(Tag tag) {
         saveOrUpdate(tag);
         tagMap.remove(tag.getName());
+        customTranslations.put(tag.getName().toLowerCase(), tag.getTranslation());
         requestExecutor.execute(() -> PixivPost.setTag(cookie, tt, tag.getName(), tag.getTranslation()));
     }
 
