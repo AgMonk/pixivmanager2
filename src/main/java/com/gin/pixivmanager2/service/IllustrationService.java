@@ -29,4 +29,5 @@ public interface IllustrationService extends IService<Illustration> {
     List<Illustration> findList(Collection<String> ids, Integer minBookCount, boolean newDetailOnly);
 
 
+    void autoUpdate();
 }

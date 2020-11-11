@@ -23,4 +23,6 @@ public class MyUrlPatternConfiguration extends WebMvcConfigurationSupport {
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
         super.addResourceHandlers(registry);
     }
+    
+
 }

@@ -3,7 +3,6 @@ package com.gin.pixivmanager2.controller;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.service.ConfigService;
 import com.gin.pixivmanager2.service.IllustrationService;
-import com.gin.pixivmanager2.util.NgaPost;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,11 +42,7 @@ public class IllustrationController {
     @RequestMapping("test")
     public Object test(String idString) {
 
-        String cookie = configService.getCookie("nga").getValue();
-
-        String url = NgaPost.create(cookie, "-993945", "23293528", NgaPost.ACTION_REPLY)
-                .addContent("测试测试测试").send();
-
+        illustrationService.autoUpdate();
 
         return null;
     }

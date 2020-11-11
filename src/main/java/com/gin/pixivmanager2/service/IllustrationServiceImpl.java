@@ -132,14 +132,16 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
     }
 
     @Scheduled(cron = "0 8/10 * * * ?")
+    @Override
     public void autoUpdate() {
         long t = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000;
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
+
         queryWrapper.select("id")
-                .isNull("lastUpdate").or().le("lastUpdate", t).or().isNull("bookmarkCount")
+                .isNull("lastUpdate").or(iQW -> iQW.le("lastUpdate", t).isNull("bookmarkCount"))
                 .orderByDesc("id").last("limit 0,20");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
-        
+
         log.info("自动更新详情 {}", idList.subList(0, 10));
         log.info("自动更新详情 {}", idList.subList(10, 20));
 
