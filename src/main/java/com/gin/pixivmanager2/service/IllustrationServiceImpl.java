@@ -138,7 +138,8 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
 
         queryWrapper.select("id")
-                .isNull("lastUpdate").or(iQW -> iQW.le("lastUpdate", t).isNull("bookmarkCount"))
+                .isNull("lastUpdate")
+                .or().le("lastUpdate", t)
                 .orderByDesc("id").last("limit 0,20");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
