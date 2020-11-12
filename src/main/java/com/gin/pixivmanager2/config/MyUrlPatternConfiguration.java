@@ -3,15 +3,16 @@ package com.gin.pixivmanager2.config;
 import com.gin.pixivmanager2.service.ConfigService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * @author bx002
+ */
 @Configuration
-public class MyUrlPatternConfiguration extends WebMvcConfigurationSupport {
-    private final ConfigService configService;
+public class MyUrlPatternConfiguration implements WebMvcConfigurer {
     private final String rootPath;
 
     public MyUrlPatternConfiguration(ConfigService configService) {
-        this.configService = configService;
         this.rootPath = configService.getPath("rootPath").getValue();
     }
 
@@ -21,8 +22,5 @@ public class MyUrlPatternConfiguration extends WebMvcConfigurationSupport {
         registry.addResourceHandler("/img/**").addResourceLocations("file:" + rootPath + "/");
 
         registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
-        super.addResourceHandlers(registry);
     }
-    
-
 }
