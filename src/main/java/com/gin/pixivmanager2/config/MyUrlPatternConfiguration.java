@@ -21,6 +21,6 @@ public class MyUrlPatternConfiguration implements WebMvcConfigurer {
         //硬盘文件目录
         registry.addResourceHandler("/img/**").addResourceLocations("file:" + rootPath + "/");
 
-        registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
+//        registry.addResourceHandler("/**").addResourceLocations("classpath:/static/");
     }
 }

@@ -131,7 +131,8 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         return new ArrayList<>(map.values());
     }
 
-    @Scheduled(cron = "0 8/10 * * * ?")
+    @Scheduled(cron = "0 8/10 8-23 * * ?")
+    @Scheduled(cron = "0 3/5 2-5 * * ?")
     @Override
     public void autoUpdate() {
         long t = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000;
@@ -140,11 +141,13 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         queryWrapper.select("id")
                 .isNull("lastUpdate")
                 .or().le("lastUpdate", t)
-                .orderByDesc("id").last("limit 0,20");
+                .orderByDesc("id").last("limit 0,30");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
-        log.info("自动更新详情 {}", idList.subList(0, 10));
-        log.info("自动更新详情 {}", idList.subList(10, 20));
+        int step = 10;
+        for (int i = 0; i < idList.size(); i += step) {
+            log.info("自动更新详情 {}", idList.subList(i, Math.min(idList.size(), i + step)));
+        }
 
         findList(idList, 0, false);
 
