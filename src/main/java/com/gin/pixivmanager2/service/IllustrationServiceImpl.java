@@ -26,6 +26,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
     private final ThreadPoolTaskExecutor requestExecutor;
     private final ProgressService progressService;
     private final IllustrationDAO illustrationDAO;
+    private final static long UPDATE_INTERVAL = 24L * 60 * 60 * 1000 * 45;
 
     /**
      * 作品详情缓存
@@ -131,17 +132,16 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         return new ArrayList<>(map.values());
     }
 
-    @Scheduled(cron = "0 8/10 8-23 * * ?")
-    @Scheduled(cron = "0 3/5 2-5 * * ?")
+    @Scheduled(cron = "0 2/5 * * * ?")
     @Override
     public void autoUpdate() {
-        long t = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000;
+        long t = System.currentTimeMillis() - UPDATE_INTERVAL;
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
 
         queryWrapper.select("id")
                 .isNull("lastUpdate")
                 .or().le("lastUpdate", t)
-                .orderByDesc("id").last("limit 0,30");
+                .orderByDesc("id").last("limit 0,15");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
         int step = 10;
@@ -162,10 +162,9 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      * @return
      */
     private static boolean needUpdate(Illustration ill, Integer minBookCount) {
-        long l = 30L * 24 * 60 * 60 * 1000;
         return ill == null
                 || ill.getLastUpdate() == null
-                || System.currentTimeMillis() - ill.getLastUpdate() > l
+                || System.currentTimeMillis() - ill.getLastUpdate() > UPDATE_INTERVAL
                 || ill.getBookmarkCount() == null
                 || ill.getBookmarkCount() < minBookCount;
     }

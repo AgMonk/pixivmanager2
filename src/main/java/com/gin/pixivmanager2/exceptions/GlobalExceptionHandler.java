@@ -9,10 +9,9 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author bx002
@@ -34,7 +33,7 @@ public class GlobalExceptionHandler {
         for (ObjectError allError : allErrors) {
             message.append(allError.getDefaultMessage()).append(" ");
         }
-        log.warn(message.toString());
+        log.warn("BindException {}", message.toString());
         return new ResError(3000, message.toString());
     }
 
@@ -48,17 +47,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ConstraintViolationException.class})
     public ResError illegalArgument(ConstraintViolationException e) {
         String message = e.getMessage();
-        message = message.substring(message.indexOf(".")+1);
+        message = message.substring(message.indexOf(".") + 1);
         return new ResError(3000, message);
     }
 
     @ResponseBody
     @ExceptionHandler({BusinessException.class})
     public ResError businessExceptionHandler(BusinessException e) {
-        log.warn(e.getMessage());
+        log.warn("BusinessException {}", e.getMessage());
         return new ResError(e.getCode(), e.getMessage());
     }
 
+
+    @ResponseBody
+    @ExceptionHandler({SQLException.class})
+    public ResError SQLExceptionHandler(SQLException e) {
+        log.warn("SQLException {}", e.getMessage());
+        return null;
+    }
 
     @ResponseBody
     @ExceptionHandler({Exception.class})

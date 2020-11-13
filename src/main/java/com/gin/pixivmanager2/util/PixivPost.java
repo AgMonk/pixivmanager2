@@ -316,6 +316,7 @@ public class PixivPost {
         JSONObject body = getBody(result);
 
         if (body == null) {
+            log.info("搜索失败 {}", result);
             return null;
         }
 
