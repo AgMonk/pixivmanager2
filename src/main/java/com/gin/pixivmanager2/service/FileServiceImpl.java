@@ -61,7 +61,12 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             return;
         }
         log.info("添加下载队列 {}个", sum);
-        saveBatch(illustrations.stream().flatMap(i -> getDownloadingList(i, type)).collect(Collectors.toList()));
+        List<String> downloadingPath = list().stream().map(DownloadingFile::getPath).collect(Collectors.toList());
+        saveBatch(illustrations.stream()
+                .flatMap(i -> getDownloadingList(i, type))
+                .filter(d -> !downloadingPath.contains(d.getPath()))
+                .collect(Collectors.toList())
+        );
     }
 
     @Override
