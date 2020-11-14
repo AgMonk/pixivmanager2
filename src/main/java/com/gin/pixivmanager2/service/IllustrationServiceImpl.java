@@ -160,7 +160,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
                 .orderByDesc("id").last("limit 0,15");
         List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
-        int step = 10;
+        int step = 5;
         for (int i = 0; i < idList.size(); i += step) {
             log.info("自动更新详情 {}", idList.subList(i, Math.min(idList.size(), i + step)));
         }
