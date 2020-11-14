@@ -170,8 +170,13 @@ public class Illustration {
                 tagBuilder.append(tagString).append(",");
                 translationBuilder.append(trans != null ? trans.getString("en") : tagString).append(",");
             }
-            ill.setTag(tagBuilder.substring(0, tagBuilder.length() - 1))
-                    .setTagTranslated(translationBuilder.substring(0, translationBuilder.length() - 1));
+            if (tagBuilder.length() > 0) {
+
+                ill.setTag(tagBuilder.substring(0, tagBuilder.length() - 1))
+                        .setTagTranslated(translationBuilder.substring(0, translationBuilder.length() - 1));
+            } else {
+                System.err.println("未找到tag:" + ill.getId());
+            }
         } catch (ClassCastException e) {
             //cast错误 说明是简短tags
             JSONArray tagsArray = body.getJSONArray("tags");
