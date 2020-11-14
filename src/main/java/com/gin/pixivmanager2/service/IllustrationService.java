@@ -5,6 +5,7 @@ import com.gin.pixivmanager2.entity.Illustration;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author bx002
@@ -28,6 +29,8 @@ public interface IllustrationService extends IService<Illustration> {
      */
     List<Illustration> findList(Collection<String> ids, Integer minBookCount, boolean newDetailOnly);
 
+
+    List<Illustration> getDetails(List<String> needPost, Integer minBookCount, Map<String, Illustration> map);
 
     void autoUpdate();
 }

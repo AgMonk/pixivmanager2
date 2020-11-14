@@ -114,22 +114,38 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         needPost.addAll(lackList);
         log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
         if (needPost.size() > 0) {
-            TaskProgress detailProgress = progressService.add("详情任务");
-            List<Illustration> newDetails = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
-                    .map(Illustration::parse)
-                    .filter(i -> i.getBookmarkCount() > minBookCount)
-                    .peek(i -> {
-                        map.put(i.getId(), i);
-                        illustrationMap.put(i.getId(), i);
-                    }).collect(Collectors.toList());
-            List<Illustration> list = map.values().stream().peek(i -> i.setLastUpdate(System.currentTimeMillis())).collect(Collectors.toList());
-            progressService.remove(detailProgress);
-            saveOrUpdateBatch(list);
+            List<Illustration> newDetails = getDetails(needPost, minBookCount, map);
             if (newDetailOnly) {
                 return newDetails;
             }
         }
         return new ArrayList<>(map.values());
+    }
+
+    /**
+     * 请求详情并更新数据库
+     *
+     * @param needPost
+     * @param minBookCount
+     * @param map
+     * @return java.util.List<com.gin.pixivmanager2.entity.Illustration>
+     * @author bx002
+     * @date 2020/11/14 10:34
+     */
+    @Override
+    public List<Illustration> getDetails(List<String> needPost, Integer minBookCount, Map<String, Illustration> map) {
+        TaskProgress detailProgress = progressService.add("详情任务");
+        List<Illustration> newDetails = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
+                .map(Illustration::parse)
+                .filter(i -> i.getBookmarkCount() > minBookCount)
+                .peek(i -> {
+                    map.put(i.getId(), i);
+                    illustrationMap.put(i.getId(), i);
+                }).collect(Collectors.toList());
+        List<Illustration> list = map.values().stream().peek(i -> i.setLastUpdate(System.currentTimeMillis())).collect(Collectors.toList());
+        progressService.remove(detailProgress);
+        saveOrUpdateBatch(list);
+        return newDetails;
     }
 
     @Scheduled(cron = "0 2/5 * * * ?")

@@ -271,14 +271,14 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                             log.warn("下载失败 {}", PixivPost.URL_ARTWORK_PREFIX + id);
 
                             log.info("尝试更新作品详情 {}", id);
-                            IllustrationServiceImpl service = SpringContextUtil.getBean(IllustrationServiceImpl.class);
-                            Illustration detail = service.getDetail(id, null);
+                            IllustrationService service = SpringContextUtil.getBean(IllustrationService.class);
+                            List<Illustration> details = service.getDetails(Collections.singletonList(id), 0, new HashMap<>());
                             //删除已有下载url
                             QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
                             qw.like("url", id);
                             remove(qw);
                             //重新添加下载url
-                            download(detail, "未分类");
+                            download(details.get(0), "未分类");
                         } else {
                             log.warn("下载失败 {}", file);
                         }
