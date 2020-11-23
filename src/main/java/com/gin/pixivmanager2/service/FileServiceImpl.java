@@ -134,10 +134,13 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         Collection<String> finalPidCollection = pidCollection;
         illustrationList.forEach(i -> {
             finalPidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
-                String count = s.substring(s.indexOf("_p") + 2);
-                String destPath = archivePath + "/" + i.getIllustType() + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
-                File destFile = new File(destPath);
                 File srcFile = fileMap.get(s);
+                String srcFilePath = srcFile.getPath();
+                String srcSuffix = srcFilePath.substring(srcFilePath.lastIndexOf("."));
+                String count = s.substring(s.indexOf("_p") + 2);
+                String destPath = archivePath + "/" + i.getIllustType()
+                        + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
+                File destFile = new File(destPath.substring(0, destPath.lastIndexOf(".")) + srcSuffix);
 
                 if (destFile.exists()) {
                     if (destFile.length() == srcFile.length()) {
