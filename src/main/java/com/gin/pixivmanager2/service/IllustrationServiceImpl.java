@@ -139,7 +139,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         });
 
         List<Illustration> detail = TasksUtil
-                .executeTasks(tasks, 59, requestExecutor, "detail", 2)
+                .executeTasks(tasks, 55, requestExecutor, "detail", 2)
                 .stream().filter(ill -> ill.getId() != null).collect(Collectors.toList());
         ;
 
