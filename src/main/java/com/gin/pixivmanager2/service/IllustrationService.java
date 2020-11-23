@@ -5,32 +5,25 @@ import com.gin.pixivmanager2.entity.Illustration;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author bx002
  */
 public interface IllustrationService extends IService<Illustration> {
-    /**
-     * 根据id查询一个作品
-     *
-     * @param id
-     * @return
-     */
-    Illustration find(String id);
+
+    List<String> findExistIdList(Collection<String> idCollection);
 
     /**
      * 根据多个id查询作品
      *
      * @param ids
      * @param minBookCount
-     * @param newDetailOnly
      * @return
      */
-    List<Illustration> findList(Collection<String> ids, Integer minBookCount, boolean newDetailOnly);
+    List<Illustration> findList(Collection<String> ids, Integer minBookCount);
 
 
-    List<Illustration> getDetails(List<String> needPost, Integer minBookCount, Map<String, Illustration> map);
+    List<Illustration> getDetail(Collection<String> needPost, Integer minBookCount);
 
     void autoUpdate();
 }

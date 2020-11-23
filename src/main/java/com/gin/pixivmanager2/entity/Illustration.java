@@ -12,6 +12,7 @@ import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.springframework.util.StringUtils;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,7 +27,7 @@ import static com.gin.pixivmanager2.util.PixivPost.URL_ARTWORK_PREFIX;
 @ToString
 @Accessors(chain = true)
 @TableName(value = "t_illustration")
-public class Illustration {
+public class Illustration implements Serializable {
     public static Map<String, String> dic;
     /**
      * 插画

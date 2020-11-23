@@ -42,7 +42,7 @@ public class NgaServiceImpl implements NgaService {
                 .map(p -> p.substring(0, p.indexOf("_p"))).distinct()
                 .collect(Collectors.toList());
         //pixiv详情
-        List<Illustration> details = illustrationService.findList(pidList, 0, false);
+        List<Illustration> details = illustrationService.findList(pidList, 0);
         details.sort(Comparator.comparing(Illustration::getId));
 
         Map<String, File> fileMap = fileService.getFileMap("转发");

@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
  * @author bx002
  */
 @Slf4j
-@Transactional
+//@Transactional
 @Service
 public class BookmarkServiceImpl implements BookmarkService {
 
@@ -52,7 +51,7 @@ public class BookmarkServiceImpl implements BookmarkService {
         List<String> list = jsonObjectList.stream().map(j -> j.getString("id")).collect(Collectors.toList());
         IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
 
-        return illustrationService.findList(list, 0, false);
+        return illustrationService.findList(list, 0);
     }
 
     @Override

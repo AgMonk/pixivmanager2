@@ -7,8 +7,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotEmpty;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,14 +27,10 @@ public class IllustrationController {
         this.configService = configService;
     }
 
-    @RequestMapping(value = "find")
-    public Illustration find(@NotEmpty @DecimalMin(value = "1") String id) {
-        return illustrationService.find(id);
-    }
 
     @RequestMapping(value = "findList")
     public List<Illustration> findList(String idString) {
-        return illustrationService.findList(Arrays.asList(idString.split(",")), 200, false);
+        return illustrationService.findList(Arrays.asList(idString.split(",")), 200);
     }
 
     @RequestMapping("test")

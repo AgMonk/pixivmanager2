@@ -73,6 +73,9 @@ public class SearchServiceImpl implements SearchService {
 
     @Scheduled(cron = "0 3/10 * * * ?")
     public void autoSearch() {
+        IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
+        FileService fileService = SpringContextUtil.getBean(FileService.class);
+
         keywordList = keywordList == null || keywordList.size() == 0 ? configService.getKeywordList() : keywordList;
 
         Config config = keywordList.get(0);
@@ -87,10 +90,11 @@ public class SearchServiceImpl implements SearchService {
 
         List<String> idList = result.stream().flatMap(Collection::stream).map(Illustration::getId).collect(Collectors.toList());
 
-        IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);
-        FileService fileService = SpringContextUtil.getBean(FileService.class);
+        List<String> existIdList = illustrationService.findExistIdList(idList);
 
-        List<Illustration> details = illustrationService.findList(idList, 200, true);
+        idList.removeAll(existIdList);
+
+        List<Illustration> details = illustrationService.findList(idList, 200);
 
         fileService.download(details, "搜索/" + name);
 

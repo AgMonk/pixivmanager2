@@ -130,7 +130,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
         //带_p的pid转为不带_p的pid并去重
         List<String> list = pidCollection.stream().map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length())).distinct().collect(Collectors.toList());
-        List<Illustration> illustrationList = illustrationService.findList(list, 0, false);
+        List<Illustration> illustrationList = illustrationService.findList(list, 0);
         Collection<String> finalPidCollection = pidCollection;
         illustrationList.forEach(i -> {
             finalPidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
@@ -275,7 +275,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
                             log.info("尝试更新作品详情 {}", id);
                             IllustrationService service = SpringContextUtil.getBean(IllustrationService.class);
-                            List<Illustration> details = service.getDetails(Collections.singletonList(id), 0, new HashMap<>());
+                            List<Illustration> details = service.getDetail(Collections.singletonList(id), 0);
                             //删除已有下载url
                             QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
                             qw.like("url", id);

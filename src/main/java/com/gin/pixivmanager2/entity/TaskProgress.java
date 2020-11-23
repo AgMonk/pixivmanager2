@@ -37,6 +37,13 @@ public class TaskProgress {
         return null;
     }
 
+    public void addCount(Integer i) {
+        i = i == null ? 1 : i;
+        Integer count = progress.get("count");
+        count = count == null ? i : count + i;
+        progress.put("count", count);
+    }
+
     public String getPercentSize() {
         return progress.get("count") + "/" + progress.get("size");
     }

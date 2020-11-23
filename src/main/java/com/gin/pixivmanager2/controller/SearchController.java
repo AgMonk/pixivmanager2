@@ -43,7 +43,7 @@ public class SearchController {
     @RequestMapping("download")
     public void download(Integer start, Integer end, String keyword) {
         List<String> idList = searchService.search(Collections.singletonList(keyword), start, end, null, true, false).stream().map(Illustration::getId).collect(Collectors.toList());
-        List<Illustration> details = illustrationService.findList(idList, 200, false);
+        List<Illustration> details = illustrationService.findList(idList, 200);
         fileService.download(details, "搜索/" + keyword);
     }
 }

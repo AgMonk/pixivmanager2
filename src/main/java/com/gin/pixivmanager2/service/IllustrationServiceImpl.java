@@ -7,119 +7,108 @@ import com.gin.pixivmanager2.dao.IllustrationDAO;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.entity.TaskProgress;
 import com.gin.pixivmanager2.util.PixivPost;
+import com.gin.pixivmanager2.util.Request;
+import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
  * @author bx002
  */
 @Slf4j
-@Transactional
+//@Transactional
 @Service
 public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illustration> implements IllustrationService {
     private final ThreadPoolTaskExecutor requestExecutor;
     private final ProgressService progressService;
-    private final IllustrationDAO illustrationDAO;
-    private final static long UPDATE_INTERVAL = 24L * 60 * 60 * 1000 * 45;
+    private final static long MS_OF_DAY = 24L * 60 * 60 * 1000;
+    private final static int DAY_LIMITS = 45;
 
     /**
      * 作品详情缓存
      */
-    private final Map<String, Illustration> illustrationMap = new HashMap<>();
 
-    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor, ProgressService progressService, IllustrationDAO illustrationDAO) {
+    public IllustrationServiceImpl(ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
         this.requestExecutor = requestExecutor;
         this.progressService = progressService;
-        this.illustrationDAO = illustrationDAO;
     }
 
     /**
-     * 根据id查询一个作品
+     * 查询数据库中已存在 且较新的详情数据
      *
-     * @param id
-     * @return
+     * @param idCollection
+     * @return java.util.List<java.lang.String>
+     * @author bx002
+     * @date 2020/11/23 11:39
      */
     @Override
-    public Illustration find(String id) {
-        Illustration ill = illustrationMap.get(id);
-        if (ill == null) {
-            ill = getById(id);
-            illustrationMap.put(id, ill);
-        }
-        if (needUpdate(ill, 0)) {
-            ill = getDetail(id, ill);
-        }
-
-        return ill;
+    public List<String> findExistIdList(Collection<String> idCollection) {
+        QueryWrapper<Illustration> qw = new QueryWrapper<>();
+        qw.select("id")
+                .in("id", idCollection)
+                .isNotNull("lastUpdate")
+                .ge("lastUpdate", getLimit());
+        return list(qw).stream().map(Illustration::getId).collect(Collectors.toList());
     }
 
-    /**
-     * 不带条件请求作品详情
-     *
-     * @param id
-     * @param ill
-     * @return
-     */
-    public Illustration getDetail(String id, Illustration ill) {
-        JSONObject detail = PixivPost.detail(id, null);
-        if (detail != null) {
-            ill = Illustration.parse(detail);
-            saveOrUpdate(ill);
-            illustrationMap.put(id, ill);
-        }
-        return ill;
-    }
 
     /**
      * 根据多个id查询作品
      *
      * @param ids
      * @param minBookCount
-     * @param newDetailOnly
      * @return
      */
     @Override
-    public List<Illustration> findList(Collection<String> ids, Integer minBookCount, boolean newDetailOnly) {
-        Map<String, Illustration> map = new HashMap<>(ids.size());
+    public List<Illustration> findList(Collection<String> ids, Integer minBookCount) {
+        //查询数据库中 在id集合中 但 不需要更新的详情数据
         List<String> lackList = new ArrayList<>(ids);
+        List<String> noNeedUpdate = findExistIdList(lackList);
+        lackList.removeAll(noNeedUpdate);
 
-        //缓存
-        illustrationMap.keySet().stream()
-                .filter(lackList::contains)
-                .forEach(s -> {
-                    lackList.remove(s);
-                    map.put(s, illustrationMap.get(s));
-                });
-
-        //查询数据库
         if (lackList.size() > 0) {
-            QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
-            queryWrapper.in("id", lackList);
-            List<Illustration> daoList = list(queryWrapper);
-            daoList.forEach(i -> {
-                map.put(i.getId(), i);
-                illustrationMap.put(i.getId(), i);
-                lackList.remove(i.getId());
-            });
+            log.info("需要请求 {} 条数据", lackList.size());
+            getDetail(lackList, minBookCount);
         }
 
-        //pixiv请求更新旧数据
-        List<String> needPost = map.values().stream().filter(i -> needUpdate(i, minBookCount)).map(Illustration::getId).collect(Collectors.toList());
-        needPost.addAll(lackList);
-        log.info("数据库中有 {} 条数据 需要请求 {} 条数据", map.size(), needPost.size());
-        if (needPost.size() > 0) {
-            List<Illustration> newDetails = getDetails(needPost, minBookCount, map);
-            if (newDetailOnly) {
-                return newDetails;
+        QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("id", ids);
+        return list(queryWrapper);
+    }
+
+    /**
+     * 不带条件请求并更新作品详情
+     *
+     * @param id
+     * @param minBookCount 只记录收藏数大于等于该数的数据
+     * @return
+     */
+    private Illustration getDetail(String id, Integer minBookCount) {
+        JSONObject detail = PixivPost.detail(id, null);
+        if (detail != null) {
+            Illustration ill = Illustration.parse(detail);
+            if (minBookCount == null || ill.getBookmarkCount() >= minBookCount) {
+                saveOrUpdate(ill);
             }
+            return ill;
         }
-        return new ArrayList<>(map.values());
+        Illustration byId = getById(id);
+        if (byId != null) {
+            Illustration entity = new Illustration();
+            long now = System.currentTimeMillis();
+            entity.setId(byId.getId()).setLastUpdate(now);
+            updateById(entity);
+            return byId.setLastUpdate(now);
+        }
+        return new Illustration();
     }
 
     /**
@@ -127,61 +116,58 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      *
      * @param needPost
      * @param minBookCount
-     * @param map
      * @return java.util.List<com.gin.pixivmanager2.entity.Illustration>
      * @author bx002
      * @date 2020/11/14 10:34
      */
     @Override
-    public List<Illustration> getDetails(List<String> needPost, Integer minBookCount, Map<String, Illustration> map) {
+    public List<Illustration> getDetail(Collection<String> needPost, Integer minBookCount) {
+        long start = System.currentTimeMillis();
+        ArrayList<String> list = new ArrayList<>(needPost);
+        int step = 5;
+        for (int i = 0; i < list.size(); i += step) {
+            log.info("请求详情 {}", list.subList(i, Math.min(list.size(), i + step)));
+        }
         TaskProgress detailProgress = progressService.add("详情任务");
-        List<Illustration> newDetails = PixivPost.detail(needPost, null, requestExecutor, detailProgress.getProgress()).stream()
-                .map(Illustration::parse)
-                .filter(i -> i.getBookmarkCount() > minBookCount)
-                .peek(i -> {
-                    map.put(i.getId(), i);
-                    illustrationMap.put(i.getId(), i);
-                }).collect(Collectors.toList());
-        List<Illustration> list = map.values().stream().peek(i -> i.setLastUpdate(System.currentTimeMillis())).collect(Collectors.toList());
+        List<Callable<Illustration>> tasks = new ArrayList<>();
+        needPost.forEach(id -> {
+            tasks.add(() -> {
+                Illustration detail = getDetail(id, minBookCount);
+                detailProgress.addCount(1);
+                return detail;
+            });
+        });
+
+        List<Illustration> detail = TasksUtil
+                .executeTasks(tasks, 60, requestExecutor, "detail", 2)
+                .stream().filter(ill -> ill.getId() != null).collect(Collectors.toList());
+        ;
+
+        long end = System.currentTimeMillis();
+        log.info("获得作品详情 {} 个 耗时 {}", detail.size(), Request.timeCost(start, end));
         progressService.remove(detailProgress);
-        saveOrUpdateBatch(list);
-        return newDetails;
+        return detail;
     }
 
-    @Scheduled(cron = "0 2/5 * * * ?")
+    @Scheduled(cron = "0 * * * * ?")
     @Override
     public void autoUpdate() {
-        long t = System.currentTimeMillis() - UPDATE_INTERVAL;
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
 
         queryWrapper.select("id")
                 .isNull("lastUpdate")
-                .or().le("lastUpdate", t)
-                .orderByDesc("id").last("limit 0,15");
-        List<String> idList = illustrationDAO.selectList(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
+                .or().le("lastUpdate", getLimit())
+                .orderByDesc("id").last("limit 0,3");
+        List<String> idList = list(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
-        int step = 5;
-        for (int i = 0; i < idList.size(); i += step) {
-            log.info("自动更新详情 {}", idList.subList(i, Math.min(idList.size(), i + step)));
-        }
+        log.info("自动更新详情 {} 条", idList.size());
 
-        findList(idList, 0, false);
+        findList(idList, 0);
 
     }
 
 
-    /**
-     * 作品是否需要通过请求更新数据
-     *
-     * @param ill
-     * @param minBookCount
-     * @return
-     */
-    private static boolean needUpdate(Illustration ill, Integer minBookCount) {
-        return ill == null
-                || ill.getLastUpdate() == null
-                || System.currentTimeMillis() - ill.getLastUpdate() > UPDATE_INTERVAL
-                || ill.getBookmarkCount() == null
-                || ill.getBookmarkCount() < minBookCount;
+    private static long getLimit() {
+        return System.currentTimeMillis() - DAY_LIMITS * MS_OF_DAY;
     }
 }
