@@ -45,6 +45,6 @@ public class FanboxController {
 
     @Scheduled(cron = "0 0/10 * * * ?")
     public void autoFanbox() {
-        listSupporting(20);
+        listSupporting(10);
     }
 }

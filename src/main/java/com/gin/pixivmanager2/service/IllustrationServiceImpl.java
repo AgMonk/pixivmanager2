@@ -128,7 +128,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         for (int i = 0; i < list.size(); i += step) {
             log.info("请求详情 {}", list.subList(i, Math.min(list.size(), i + step)));
         }
-        TaskProgress detailProgress = progressService.add("详情任务");
+        TaskProgress detailProgress = progressService.add("详情任务", list.size());
         List<Callable<Illustration>> tasks = new ArrayList<>();
         needPost.forEach(id -> {
             tasks.add(() -> {
@@ -139,7 +139,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         });
 
         List<Illustration> detail = TasksUtil
-                .executeTasks(tasks, 60, requestExecutor, "detail", 2)
+                .executeTasks(tasks, 59, requestExecutor, "detail", 2)
                 .stream().filter(ill -> ill.getId() != null).collect(Collectors.toList());
         ;
 
@@ -157,7 +157,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         queryWrapper.select("id")
                 .isNull("lastUpdate")
                 .or().le("lastUpdate", getLimit())
-                .orderByDesc("id").last("limit 0,3");
+                .orderByDesc("id").last("limit 0,5");
         List<String> idList = list(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
         log.info("自动更新详情 {} 条", idList.size());

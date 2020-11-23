@@ -13,10 +13,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
@@ -77,8 +74,10 @@ public class SearchServiceImpl implements SearchService {
         FileService fileService = SpringContextUtil.getBean(FileService.class);
 
         keywordList = keywordList == null || keywordList.size() == 0 ? configService.getKeywordList() : keywordList;
+        //随机序号的关键字
+        int randomIndex = new Random().nextInt(keywordList.size());
 
-        Config config = keywordList.get(0);
+        Config config = keywordList.get(randomIndex);
         String name = config.getName();
         log.info("自动搜索： {}", name);
         List<Callable<List<Illustration>>> tasks = new ArrayList<>();
@@ -98,6 +97,6 @@ public class SearchServiceImpl implements SearchService {
 
         fileService.download(details, "搜索/" + name);
 
-        keywordList.remove(0);
+        keywordList.remove(randomIndex);
     }
 }

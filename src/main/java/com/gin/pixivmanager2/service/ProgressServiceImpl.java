@@ -17,6 +17,13 @@ public class ProgressServiceImpl implements ProgressService {
     private final List<TaskProgress> list = new ArrayList<>();
 
     @Override
+    public TaskProgress add(String type, Integer size) {
+        TaskProgress taskProgress = add(type);
+        taskProgress.getProgress().put("size", size);
+        return taskProgress;
+    }
+
+    @Override
     public TaskProgress add(String type) {
         TaskProgress taskProgress = new TaskProgress(type);
         synchronized (list) {

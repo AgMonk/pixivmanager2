@@ -47,7 +47,8 @@ public class TasksUtil {
                 future.cancel(true);
                 e.printStackTrace();
             } catch (TimeoutException ignored) {
-
+                future.cancel(true);
+                log.info("任务超时 取消");
             }
         }
         //任务执行完毕 且 已取消未完成任务

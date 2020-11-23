@@ -8,6 +8,8 @@ public interface ProgressService {
 
     TaskProgress add(String type);
 
+    TaskProgress add(String type, Integer size);
+
     boolean remove(TaskProgress taskProgress);
 
     List<TaskProgress> get(String type);
