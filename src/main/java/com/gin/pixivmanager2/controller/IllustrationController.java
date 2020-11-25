@@ -33,10 +33,14 @@ public class IllustrationController {
         return illustrationService.findList(Arrays.asList(idString.split(",")), 200);
     }
 
+    @RequestMapping("update")
+    public void update(Integer step) {
+        illustrationService.update(step);
+    }
+
     @RequestMapping("test")
     public Object test(String idString) {
 
-        illustrationService.autoUpdate();
 
         return null;
     }

@@ -22,6 +22,8 @@
 <body>
 <div id="app">
     <button @click="downloadUntagged()">下载未分类</button>
+    <button @click="update(10)">更新详情*10</button>
+    <button @click="update(20)">更新详情*20</button>
     <table class="customers">
         <tr>
             <th colspan="10">下载进度</th>
@@ -95,6 +97,9 @@
             downloadUntagged() {
                 get("/bmk/downloadUntagged", null, null);
             },
+            update(x) {
+                get("/ill/update", {step: x}, null)
+            }
         },
         created() {
             setInterval(function () {

@@ -46,4 +46,9 @@ public class SearchController {
         List<Illustration> details = illustrationService.findList(idList, 200);
         fileService.download(details, "搜索/" + keyword);
     }
+
+    @RequestMapping("auto")
+    public void auto() {
+        searchService.autoSearch();
+    }
 }

@@ -10,6 +10,7 @@ import com.gin.pixivmanager2.util.PixivPost;
 import com.gin.pixivmanager2.util.Request;
 import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -93,6 +94,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      */
     private Illustration getDetail(String id, Integer minBookCount) {
         JSONObject detail = PixivPost.detail(id, null);
+        //从pixiv成功查询到作品详情 保存/更新详情
         if (detail != null) {
             Illustration ill = Illustration.parse(detail);
             if (minBookCount == null || ill.getBookmarkCount() >= minBookCount) {
@@ -100,13 +102,14 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
             }
             return ill;
         }
+        //查询作品详情失败 设置更新时间 不再更新
         Illustration byId = getById(id);
         if (byId != null) {
             Illustration entity = new Illustration();
-            long now = System.currentTimeMillis();
-            entity.setId(byId.getId()).setLastUpdate(now);
+            long noLongerUpdate = 9999999999999L;
+            entity.setId(byId.getId()).setLastUpdate(noLongerUpdate);
             updateById(entity);
-            return byId.setLastUpdate(now);
+            return byId.setLastUpdate(noLongerUpdate);
         }
         return new Illustration();
     }
@@ -126,7 +129,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         ArrayList<String> list = new ArrayList<>(needPost);
         int step = 5;
         for (int i = 0; i < list.size(); i += step) {
-            log.info("请求详情 {}", list.subList(i, Math.min(list.size(), i + step)));
+            log.info("[请求详情] {}", list.subList(i, Math.min(list.size(), i + step)));
         }
         TaskProgress detailProgress = progressService.add("详情任务", list.size());
         List<Callable<Illustration>> tasks = new ArrayList<>();
@@ -139,7 +142,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         });
 
         List<Illustration> detail = TasksUtil
-                .executeTasks(tasks, 55, requestExecutor, "detail", 2)
+                .executeTasks(tasks, 50, requestExecutor, "detail", 2)
                 .stream().filter(ill -> ill.getId() != null).collect(Collectors.toList());
         ;
 
@@ -149,21 +152,34 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         return detail;
     }
 
-    @Scheduled(cron = "0 * * * * ?")
     @Override
-    public void autoUpdate() {
+    public void update(@DefaultValue("10") Integer step) {
+
         QueryWrapper<Illustration> queryWrapper = new QueryWrapper<>();
 
-        queryWrapper.select("id")
+        queryWrapper
                 .isNull("lastUpdate")
                 .or().le("lastUpdate", getLimit())
-                .orderByDesc("id").last("limit 0,5");
+        ;
+        int count = count(queryWrapper);
+
+        queryWrapper
+                .select("id")
+                .orderByDesc("id")
+                .last("limit 0," + step)
+        ;
         List<String> idList = list(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
-        log.info("自动更新详情 {} 条", idList.size());
+        int size = idList.size();
+        log.info("[更新详情] 有 {} 条详情待更新  本次更新 {} 条 需要更新 {} 次", count, size, count / size);
 
         findList(idList, 0);
 
+    }
+
+    @Scheduled(cron = "0 * * * * ?")
+    void autoUpdate() {
+        update(10);
     }
 
 

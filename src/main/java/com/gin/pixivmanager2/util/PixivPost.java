@@ -61,7 +61,9 @@ public class PixivPost {
         long start = System.currentTimeMillis();
         log.debug("请求作品详情{} {}", cookie == null ? "" : "(cookie)", pid);
 
-        Request request = Request.create(URL_ILLUST_DETAIL + pid)
+        Request request = Request
+                .create(URL_ILLUST_DETAIL + pid)
+                .setTimeOutSecond(10)
                 .setCookie(cookie).get();
         String result = request.getResult();
         JSONObject resultJson = result == null ? null : JSONObject.parseObject(result);
@@ -225,7 +227,7 @@ public class PixivPost {
 
         if (body != null) {
             total = body.getInteger("total");
-            log.info("{} 标签下有总计 {} 个作品", tag, total);
+            log.info("标签 [{}] 下有总计 {} 个作品", tag, total);
             total = Math.min(total, page * limit);
             log.debug("请求 {} 个作品", total);
             JSONArray works = body.getJSONArray("works");

@@ -25,5 +25,5 @@ public interface IllustrationService extends IService<Illustration> {
 
     List<Illustration> getDetail(Collection<String> needPost, Integer minBookCount);
 
-    void autoUpdate();
+    void update(Integer step);
 }
