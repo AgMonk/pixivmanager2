@@ -99,5 +99,7 @@ public class SearchServiceImpl implements SearchService {
         fileService.download(details, "搜索/" + name);
 
         keywordList.remove(randomIndex);
+
+        log.info("剩余关键字 {}", keywordList.stream().map(Config::getName).collect(Collectors.toList()));
     }
 }

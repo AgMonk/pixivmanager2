@@ -513,7 +513,8 @@ public class Request {
                         msg = " 连接被重定向 ";
                         throw new RuntimeException(statusCode + msg + uri);
                     default:
-                        throw new RuntimeException(statusCode + msg + uri);
+//                        throw new RuntimeException(statusCode + msg + uri);
+                        log.warn("code: {} entity:{}", statusCode, response.getEntity());
                 }
 
 
@@ -523,6 +524,9 @@ public class Request {
                     log.debug(message);
                 } else {
                     log.warn(message);
+                    if (!message.contains("404") && !message.contains("500")) {
+                        e.printStackTrace();
+                    }
                 }
 //                if (message != null && !message.contains("302")) {
 //                    e.printStackTrace();
