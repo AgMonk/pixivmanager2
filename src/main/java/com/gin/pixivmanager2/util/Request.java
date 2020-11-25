@@ -496,7 +496,7 @@ public class Request {
                         handleEntity(i, entity, contentType);
                         return this;
                     case HttpStatus.SC_BAD_GATEWAY:
-                        log.debug("第{}次请求 失败 服务器错误({}) {}", i + 1, statusCode, EntityUtils.toString(entity, decodeEnc));
+                        log.debug("第{}次请求 失败 服务器错误({}) {}", i + 1, statusCode, uri);
                         try {
                             Thread.sleep(10 * 1000);
                         } catch (InterruptedException e) {
