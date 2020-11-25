@@ -218,7 +218,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     @Override
-    @Scheduled(cron = "0/5 * 3-5 * * ?")
+    @Scheduled(cron = "0/5 * 1-5 * * ?")
     @Scheduled(cron = "0/10 * 8-9 * * ?")
     public void startDownload() {
         int maxPoolSize = downloadExecutor.getMaxPoolSize();

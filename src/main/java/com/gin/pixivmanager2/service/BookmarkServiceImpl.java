@@ -58,18 +58,15 @@ public class BookmarkServiceImpl implements BookmarkService {
     @Scheduled(cron = "0 5/10 * * * ?")
     public void downloadUntaggedBookmarks() {
         List<Illustration> list = getBookmarks("未分類", 3);
-        if (list.size() == 0) {
-            return;
+        if (list.size() > 0) {
+            fileService.download(list, "未分类");
+            //收藏
+            TaskProgress taskProgress = progressService.add("添加Tag");
+            Map<String, String> pidAndTags = new HashMap<>();
+            list.forEach(i -> pidAndTags.put(i.getId(), i.getTagString()));
+            PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, taskProgress.getProgress());
+            progressService.remove(taskProgress);
         }
-        fileService.download(list, "未分类");
-
-        //收藏
-        TaskProgress taskProgress = progressService.add("添加Tag");
-        Map<String, String> pidAndTags = new HashMap<>();
-        list.forEach(i -> pidAndTags.put(i.getId(), i.getTagString()));
-        PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, taskProgress.getProgress());
-        progressService.remove(taskProgress);
-
         fileService.startDownload();
     }
 
