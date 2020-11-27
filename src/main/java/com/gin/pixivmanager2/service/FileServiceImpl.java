@@ -258,10 +258,11 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                     if (file.exists()) {
                         String filePath = file.getPath();
                         String path = filePath.replace("\\", "/").replace(rootPath, "");
-                        log.info("下载完毕 {}", path.substring(0, path.contains("]") ? path.indexOf("]") + 1 : Math.min(30, path.length())));
+                        log.info("下载完毕 {}",
+                                path.substring(0, path.contains("]") ? path.indexOf("]") + 1 : Math.min(30, path.length())));
 
                         //如果是zip文件，加入解压制作gif队列
-                        if (filePath.endsWith(".zip")) {
+                        if (filePath.endsWith(".zip") && !f.getType().contains("fanbox")) {
                             gifExecutor.execute(() -> GifUtil.zip2Gif(filePath));
                         }
 

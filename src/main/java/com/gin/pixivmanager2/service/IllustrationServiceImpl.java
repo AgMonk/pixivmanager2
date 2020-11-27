@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static com.gin.pixivmanager2.util.ListUtils.spiltList;
+
 /**
  * @author bx002
  */
@@ -127,10 +129,9 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
     public List<Illustration> getDetail(Collection<String> needPost, Integer minBookCount) {
         long start = System.currentTimeMillis();
         ArrayList<String> list = new ArrayList<>(needPost);
-        int step = 5;
-        for (int i = 0; i < list.size(); i += step) {
-            log.info("[请求详情] {}", list.subList(i, Math.min(list.size(), i + step)));
-        }
+
+        spiltList(list, 5).forEach(l -> log.info("[请求详情] {}", l));
+
         TaskProgress detailProgress = progressService.add("详情任务", list.size());
         List<Callable<Illustration>> tasks = new ArrayList<>();
         needPost.forEach(id -> {

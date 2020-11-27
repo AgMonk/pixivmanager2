@@ -17,6 +17,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static com.gin.pixivmanager2.util.ListUtils.spiltList;
+
 /**
  * @author bx002
  */
@@ -100,6 +102,8 @@ public class SearchServiceImpl implements SearchService {
 
         keywordList.remove(randomIndex);
 
-        log.info("剩余关键字 {}", keywordList.stream().map(Config::getName).collect(Collectors.toList()));
+
+        spiltList(keywordList.stream().map(Config::getName).collect(Collectors.toList()), 5)
+                .forEach(l -> log.info("剩余关键字 {}", l));
     }
 }
