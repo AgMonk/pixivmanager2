@@ -67,7 +67,7 @@ public class BookmarkServiceImpl implements BookmarkService {
             PixivPost.addTags(pidAndTags, cookie, tt, requestExecutor, taskProgress.getProgress());
             progressService.remove(taskProgress);
         }
-        fileService.startDownload();
+//        fileService.startDownload();
     }
 
 }

@@ -40,4 +40,6 @@ public interface FileService {
     void startDownload();
 
     List<DownloadingFile> getDownloadingFileList();
+
+    void aria2Download();
 }

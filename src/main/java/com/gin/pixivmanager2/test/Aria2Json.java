@@ -16,10 +16,13 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
- * Aira2请求的Json对象
+ * Aria2请求的Json对象
  *
  * @author bx002
  * @date 2020/11/27 17:20
@@ -30,13 +33,14 @@ import java.util.*;
 @Accessors(chain = true)
 //无参构造方法
 @NoArgsConstructor
-public class Aira2Json {
+public class Aria2Json {
     /**
      * 方法名常量
      */
     public final static String METHOD_TELL_ACTIVE = "aria2.tellActive";
     public final static String METHOD_ADD_URI = "aria2.addUri";
     public final static String METHOD_GET_GLOBAL_STAT = "aria2.getGlobalStat";
+    public final static String METHOD_TELL_STOPPED = "aria2.tellStopped";
     /**
      * id随机生成，也可以手动设置
      */
@@ -44,56 +48,20 @@ public class Aira2Json {
     private String jsonrpc = "2.0";
     private String method = METHOD_TELL_ACTIVE;
     private String url;
+    private List<Object> params = new ArrayList<>();
     //暂存下载参数
-    private Map<String, String> paramsMap = new HashMap<>();
 
     /**
      * 添加下载参数
      *
-     * @param key
-     * @param value
      * @return
      */
-    public Aira2Json addParam(String key, String value) {
-        paramsMap.put(key, value);
+    public Aria2Json addParam(Object obj) {
+        params.add(obj);
         return this;
     }
 
-    /**
-     * 设置下载根目录
-     *
-     * @param dir
-     * @return
-     */
-    public Aira2Json setDir(String dir) {
-        return addParam("dir", dir);
-    }
-
-    /**
-     * 设置根目录下的子目录名称
-     *
-     * @param fileName
-     * @return
-     */
-    public Aira2Json setOutName(String fileName) {
-        return addParam("out", fileName);
-    }
-
-    /**
-     * 生成真正的params字段
-     *
-     * @return
-     */
-    public List<Object> getParams() {
-        ArrayList<Object> list = new ArrayList<>();
-        //第一个成员为 url
-        list.add(new ArrayList<>(Collections.singletonList(url)));
-        //第二个成员为下载参数
-        list.add(paramsMap);
-        return list;
-    }
-
-    public Aira2Json(String id) {
+    public Aria2Json(String id) {
         this.id = id;
     }
 
@@ -104,8 +72,8 @@ public class Aira2Json {
         HttpPost httpPost = new HttpPost(jsonRpcUrl);
         //设置content type（正文类型） 为json格式
         httpPost.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
-        //将 this 对象解析为 json字符串 并将其设置为 entity （正文）
-        httpPost.setEntity(new StringEntity(JSONObject.toJSONString(this)));
+        //将 this 对象解析为 json字符串 并用UTF-8编码(重要)将其设置为 entity （正文）
+        httpPost.setEntity(new StringEntity(JSONObject.toJSONString(this), StandardCharsets.UTF_8));
         //发送请求并获取返回对象
         CloseableHttpResponse response = HttpClients.createDefault().execute(httpPost);
         //返回的状态码

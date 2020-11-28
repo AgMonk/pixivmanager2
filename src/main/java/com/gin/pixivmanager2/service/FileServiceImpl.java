@@ -6,6 +6,8 @@ import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
+import com.gin.pixivmanager2.test.Aria2Json;
+import com.gin.pixivmanager2.test.Aria2Option;
 import com.gin.pixivmanager2.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -304,6 +306,14 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         } else {
             //文件 通过文件名判断来源和处理方式
 
+            //绕过未下载完成的文件和aria临时文件
+            String filePath = file.getPath();
+            String ariaSuffix = ".aria2";
+            File ariaFile = new File(filePath + ariaSuffix);
+            if (filePath.endsWith(ariaSuffix) || ariaFile.exists()) {
+                return;
+            }
+
             //pixiv文件
             Matcher matcher = ILLUSTRATED_PATTERN.matcher(file.getName());
             if (matcher.find()) {
@@ -338,4 +348,35 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         }
         return list.stream();
     }
+
+    @Override
+    public void aria2Download() {
+        List<DownloadingFile> list = list();
+        Collections.sort(list);
+        list.removeIf(d -> d.getType().contains("fanbox"));
+        list = list.subList(0, Math.min(5, list.size()));
+
+        list.forEach(d -> {
+            Aria2Option aria2Option = new Aria2Option();
+            aria2Option.setDir(rootPath)
+                    .setOut(d.getPath())
+                    .setReferer("*")
+            ;
+            Aria2Json aria2Json = new Aria2Json();
+            aria2Json.setMethod(Aria2Json.METHOD_ADD_URI)
+                    .addParam(new String[]{d.getUrl()})
+                    .addParam(aria2Option);
+            ;
+            try {
+                String send = aria2Json.send(null);
+                String path = d.getPath();
+                path = path.substring(0, path.indexOf("]") + 1);
+                log.info("添加下载 {} -> {}", path, send);
+//                removeById(d.getId());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
 }

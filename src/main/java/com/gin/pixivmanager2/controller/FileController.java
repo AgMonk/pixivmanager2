@@ -107,4 +107,9 @@ public class FileController {
     public Res<List<DownloadingFile>> getDownloadingFileList() {
         return new Res<>(2000, "正在下载的文件列表 获取成功", fileService.getDownloadingFileList());
     }
+
+    @RequestMapping("test")
+    public void test() {
+        fileService.aria2Download();
+    }
 }
