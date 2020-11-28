@@ -358,7 +358,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
         list.forEach(d -> {
             Aria2Option aria2Option = new Aria2Option();
-            aria2Option.setDir(rootPath)
+            aria2Option.setDir(rootPath + "/" + d.getType())
                     .setOut(d.getPath())
                     .setReferer("*")
             ;
