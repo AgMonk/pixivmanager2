@@ -12,13 +12,7 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 public class Aria2Option {
-    /**
-     * 下载根目录
-     */
     String dir;
-    /**
-     * 文件名
-     */
     String out;
     String referer;
 

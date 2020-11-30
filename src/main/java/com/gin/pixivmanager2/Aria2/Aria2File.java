@@ -18,6 +18,7 @@ import java.util.ArrayList;
 public class Aria2File {
     Integer completedLength;
     Integer totalLength;
+    Integer errorCode;
     String status;
     String path;
     String url;
@@ -29,6 +30,7 @@ public class Aria2File {
 
     public Aria2File(JSONObject json) {
         this.completedLength = json.getInteger("completedLength");
+        this.errorCode = json.getInteger("errorCode");
         this.totalLength = json.getInteger("totalLength");
         this.status = json.getString("status");
         this.gid = json.getString("gid");

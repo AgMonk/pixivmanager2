@@ -11,7 +11,8 @@ import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.util.*;
+import com.gin.pixivmanager2.util.FilesUtil;
+import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -42,7 +43,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final ThreadPoolTaskExecutor fileExecutor = TasksUtil.getExecutor("file", 2);
     private final ThreadPoolTaskExecutor gifExecutor = TasksUtil.getExecutor("gif", 1);
     private final ThreadPoolTaskExecutor ariaExecutor = TasksUtil.getExecutor("aria", 5);
-    private final static int MAX_CONCURRENT_DOWNLOADS = 10;
+    private final static int MAX_CONCURRENT_DOWNLOADS = 20;
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
@@ -225,83 +226,6 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     }
 
-    @Override
-//    @Scheduled(cron = "0/5 * 1-5 * * ?")
-//    @Scheduled(cron = "0/10 * 8-9 * * ?")
-    public void startDownload() {
-        int maxPoolSize = downloadExecutor.getMaxPoolSize();
-        int activeCount = downloadExecutor.getActiveCount();
-        if (activeCount >= maxPoolSize) {
-            return;
-        }
-        List<String> downloadingId = downloadingFileList.stream().map(DownloadingFile::getId).collect(Collectors.toList());
-        QueryWrapper<DownloadingFile> queryWrapper = new QueryWrapper<>();
-        if (downloadingId.size() > 0) {
-            queryWrapper.notIn("id", downloadingId);
-        }
-        List<DownloadingFile> list = list(queryWrapper);
-        if (list.size() > 0) {
-            log.info("下载队列中有 {} 个文件", list.size());
-        }
-        Collections.sort(list);
-        list = list.subList(0, Math.min(list.size(), maxPoolSize - activeCount));
-
-        if (list.size() > 0) {
-            list.forEach(f -> {
-                downloadExecutor.execute(() -> {
-                    synchronized (downloadingFileList) {
-                        downloadingFileList.add(f);
-                    }
-                    File file = new File(rootPath + "/" + f.getType() + "/" + f.getPath());
-                    Request.create(f.getUrl())
-                            .setReferer(null)
-                            .setCookie(f.getType().contains("fanbox") ? fanboxCookie : "")
-                            .setFile(file)
-                            .setProgressMap(f.getProgress())
-                            .get()
-                    ;
-                    synchronized (downloadingFileList) {
-                        downloadingFileList.removeIf(d -> d.getId().equals(f.getId()));
-                    }
-                    if (file.exists()) {
-                        String filePath = file.getPath();
-                        String path = filePath.replace("\\", "/").replace(rootPath, "");
-                        log.info("下载完毕 {}",
-                                path.substring(0, path.contains("]") ? path.indexOf("]") + 1 : Math.min(30, path.length())));
-
-                        //如果是zip文件，加入解压制作gif队列
-                        if (filePath.endsWith(".zip") && !f.getType().contains("fanbox")) {
-                            gifExecutor.execute(() -> GifUtil.zip2Gif(filePath));
-                        }
-
-
-                        removeById(f.getId());
-                    } else {
-                        Matcher matcher = ILLUSTRATED_PATTERN.matcher(f.getUrl());
-                        if (matcher.find()) {
-                            String group = matcher.group();
-                            String id = group.substring(0, group.indexOf("_"));
-                            log.warn("下载失败 {}", PixivPost.URL_ARTWORK_PREFIX + id);
-
-                            log.info("尝试更新作品详情 {}", id);
-                            IllustrationService service = SpringContextUtil.getBean(IllustrationService.class);
-                            List<Illustration> details = service.getDetail(Collections.singletonList(id), 0);
-                            //删除已有下载url
-                            QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
-                            qw.like("url", id);
-                            remove(qw);
-                            //重新添加下载url
-                            download(details.get(0), "未分类");
-                        } else {
-                            log.warn("下载失败 {}", file);
-                        }
-                    }
-                });
-            });
-        }
-
-    }
-
 
     private static void listFiles(File file, Map<String, File> map) {
         if (file.isDirectory()) {
@@ -359,17 +283,24 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      * 自行下载或交给Aria2下载
      */
     @Override
-    @Scheduled(cron = "0/3 * * * * ?")
+    @Scheduled(cron = "0/30 * * * * ?")
     public void download() {
         String activeString = Aria2Json.tellActive();
         if (!StringUtils.isEmpty(activeString)) {
-            //Aria2服务有效 使用Aria2下载
-
-            JSONArray activeArray = JSONObject.parseObject(activeString).getJSONArray("result");
-
-            ArrayList<Aria2File> activeList = Aria2File.parseArray(activeArray);
-
             removeComplete();
+
+            //Aria2服务有效 使用Aria2下载
+            String waitingString = Aria2Json.tellWaiting();
+
+            //正在下载列表
+            JSONArray activeArray = JSONObject.parseObject(activeString).getJSONArray("result");
+            ArrayList<Aria2File> activeList = Aria2File.parseArray(activeArray);
+            //等待队列列表
+            JSONArray waitingArray = JSONObject.parseObject(waitingString).getJSONArray("result");
+            ArrayList<Aria2File> waitingList = Aria2File.parseArray(waitingArray);
+
+            activeList.addAll(waitingList);
+
 
             int numberOfAdd = MAX_CONCURRENT_DOWNLOADS - activeList.size();
             if (numberOfAdd > 0) {
@@ -394,9 +325,8 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     /**
-     * 从数据库删除Aria2已完成的任务
+     * 从数据库和Aria2删除已完成任务
      */
-    @Scheduled(cron = "0/1 * * * * ?")
     public void removeComplete() {
         String stoppedString = Aria2Json.tellStopped();
         if (StringUtils.isEmpty(stoppedString)) {
@@ -405,28 +335,65 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         JSONArray stoppedArray = JSONObject.parseObject(stoppedString).getJSONArray("result");
         ArrayList<Aria2File> stoppedList = Aria2File.parseArray(stoppedArray);
 
-        //从停止列表移除 未正常完成的 或 非本程序添加的任务
-        stoppedList.removeIf(f -> {
-            if (!"complete".equals(f.getStatus())) {
-                return true;
-            }
+        //筛选出已完成且由本程序添加的任务
+        List<Aria2File> completeList = stoppedList.stream()
+                .filter(f -> "complete".equals(f.getStatus()))
+                .filter(f -> {
+                    QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
+                    qw.eq("url", f.getUrl());
+                    return count(qw) == 1;
+                })
+                .collect(Collectors.toList());
+        //从数据库和Aria2删除已完成任务
+        if (completeList.size() > 0) {
             QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
-            qw.eq("path", f.getFileName());
-            return count(qw) == 0;
-        });
-
-        if (stoppedList.size() == 0) {
-            return;
+            qw.in("path", completeList.stream().map(Aria2File::getFileName).collect(Collectors.toList()));
+            if (remove(qw)) {
+                completeList.forEach(f -> {
+                    String s = Aria2Json.removeDownloadResult(f.getGid());
+                    JSONObject json = JSONObject.parseObject(s);
+                    String result = json.getString("result");
+                    log.info("删除已完成任务 {} -> {}", result, f.getFileName().substring(0, Math.min(20, f.getFileName().length())));
+                });
+            }
         }
 
-        QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
-        qw.in("path", stoppedList.stream().map(Aria2File::getFileName).collect(Collectors.toList()));
-        if (remove(qw)) {
-            stoppedList.forEach(f -> {
-                String s = Aria2Json.removeDownloadResult(f.getGid());
-                JSONObject json = JSONObject.parseObject(s);
-                String result = json.getString("result");
-                log.info("删除已完成任务 {} -> {}", result, f.getFileName());
+        List<Aria2File> errorList = stoppedList.stream()
+                .filter(f -> "error".equals(f.getStatus()))
+                .collect(Collectors.toList());
+
+        //有出错的任务
+        if (errorList.size() > 0) {
+            errorList.forEach(f -> {
+                Integer errorCode = f.getErrorCode();
+                if (errorCode == 3) {
+                    //404错误
+                    String url = f.getUrl();
+                    if (url.contains("_p")) {
+                        //删除相关url
+                        Aria2Json.removeDownloadResult(f.getGid());
+                        String pid = url.substring(url.lastIndexOf("/") + 1, url.indexOf("_p"));
+
+                        //更新详情
+                        log.info("尝试更新出错任务详情 {}", pid);
+                        Illustration detail = illustrationService.getDetail(pid, 0);
+                        //下载
+                        if (detail.getId() != null) {
+                            QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
+                            qw.like("url", pid);
+                            remove(qw);
+
+                            String type = f.getPath().replace(rootPath, "");
+                            type = type.substring(type.startsWith("/") ? 1 : 0, type.lastIndexOf("/"));
+                            download(detail, type);
+                        } else {
+                            log.info("未找到任务详情 {}", pid);
+                        }
+                    }
+                } else if (errorCode == 1 || errorCode == 2) {
+                    log.info("删除出错任务并重试 {}", f.getFileName());
+                    Aria2Json.removeDownloadResult(f.getGid());
+                }
             });
         }
     }
@@ -434,9 +401,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     /**
      * 将文件提交Aria2下载
      *
-     * @param downloadingFile
-     * @param rootPath
-     * @return
+     * @param downloadingFile 下载队列中的文件
+     * @param rootPath        下载根目录
+     * @return 是否提交成功
      */
     private static boolean downloadWithAria2(DownloadingFile downloadingFile, String rootPath) {
         Aria2Option aria2Option = new Aria2Option();

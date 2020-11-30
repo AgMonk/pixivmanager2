@@ -45,6 +45,7 @@ public class Aria2Json {
     public final static String METHOD_ADD_URI = "aria2.addUri";
     public final static String METHOD_GET_GLOBAL_STAT = "aria2.getGlobalStat";
     public final static String METHOD_TELL_STOPPED = "aria2.tellStopped";
+    public final static String METHOD_TELL_WAITING = "aria2.tellWaiting";
     public final static String METHOD_REMOVE_DOWNLOAD_RESULT = "aria2.removeDownloadResult";
     private final static String[] PARAM_ARRAY_OF_FILED =
             new String[]{"totalLength", "completedLength", "files", "status", "errorCode", "gid"};
@@ -79,6 +80,15 @@ public class Aria2Json {
         Aria2Json aria2Json = new Aria2Json();
         aria2Json.setMethod(METHOD_TELL_STOPPED)
                 .addParam(-1)
+                .addParam(1000)
+                .addParam(PARAM_ARRAY_OF_FILED);
+        return aria2Json.send(null);
+    }
+
+    public static String tellWaiting() {
+        Aria2Json aria2Json = new Aria2Json();
+        aria2Json.setMethod(METHOD_TELL_WAITING)
+                .addParam(0)
                 .addParam(1000)
                 .addParam(PARAM_ARRAY_OF_FILED);
         return aria2Json.send(null);
@@ -121,6 +131,7 @@ public class Aria2Json {
         //请求结果字符串
         String result = null;
         try {
+            //用UTF-8解码返回字符串
             result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
             //如果状态码为200表示请求成功，返回结果
             if (statusCode == HttpStatus.SC_OK) {

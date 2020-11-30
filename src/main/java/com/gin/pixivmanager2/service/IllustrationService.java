@@ -23,6 +23,8 @@ public interface IllustrationService extends IService<Illustration> {
     List<Illustration> findList(Collection<String> ids, Integer minBookCount);
 
 
+    Illustration getDetail(String id, Integer minBookCount);
+
     List<Illustration> getDetail(Collection<String> needPost, Integer minBookCount);
 
     void update(Integer step);

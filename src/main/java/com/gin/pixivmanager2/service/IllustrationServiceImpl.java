@@ -94,7 +94,8 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
      * @param minBookCount 只记录收藏数大于等于该数的数据
      * @return
      */
-    private Illustration getDetail(String id, Integer minBookCount) {
+    @Override
+    public Illustration getDetail(String id, Integer minBookCount) {
         JSONObject detail = PixivPost.detail(id, null);
         //从pixiv成功查询到作品详情 保存/更新详情
         if (detail != null) {
