@@ -41,5 +41,5 @@ public interface FileService {
 
     List<DownloadingFile> getDownloadingFileList();
 
-    void aria2Download();
+    void download();
 }

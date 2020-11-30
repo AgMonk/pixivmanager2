@@ -100,6 +100,10 @@ public class DownloadingFile implements Comparable<DownloadingFile> {
         return null;
     }
 
+    public String getFileName() {
+        return path.substring(path.lastIndexOf("/") + 1);
+    }
+
     private static String sizeFormat(Integer size) {
         size = size == null ? 100 : size;
         int k = 1024;

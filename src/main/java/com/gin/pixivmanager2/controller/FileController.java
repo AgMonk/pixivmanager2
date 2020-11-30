@@ -110,6 +110,6 @@ public class FileController {
 
     @RequestMapping("test")
     public void test() {
-        fileService.aria2Download();
+        fileService.download();
     }
 }

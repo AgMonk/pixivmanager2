@@ -1,19 +1,23 @@
 package com.gin.pixivmanager2.service;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.gin.pixivmanager2.Aria2.Aria2File;
+import com.gin.pixivmanager2.Aria2.Aria2Json;
+import com.gin.pixivmanager2.Aria2.Aria2Option;
 import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.test.Aria2Json;
-import com.gin.pixivmanager2.test.Aria2Option;
 import com.gin.pixivmanager2.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +41,8 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final IllustrationService illustrationService;
     private final ThreadPoolTaskExecutor fileExecutor = TasksUtil.getExecutor("file", 2);
     private final ThreadPoolTaskExecutor gifExecutor = TasksUtil.getExecutor("gif", 1);
+    private final ThreadPoolTaskExecutor ariaExecutor = TasksUtil.getExecutor("aria", 5);
+    private final static int MAX_CONCURRENT_DOWNLOADS = 10;
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
@@ -220,8 +226,8 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     @Override
-    @Scheduled(cron = "0/5 * 1-5 * * ?")
-    @Scheduled(cron = "0/10 * 8-9 * * ?")
+//    @Scheduled(cron = "0/5 * 1-5 * * ?")
+//    @Scheduled(cron = "0/10 * 8-9 * * ?")
     public void startDownload() {
         int maxPoolSize = downloadExecutor.getMaxPoolSize();
         int activeCount = downloadExecutor.getActiveCount();
@@ -349,34 +355,108 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         return list.stream();
     }
 
+    /**
+     * 自行下载或交给Aria2下载
+     */
     @Override
-    public void aria2Download() {
-        List<DownloadingFile> list = list();
-        Collections.sort(list);
-        list.removeIf(d -> d.getType().contains("fanbox"));
-        list = list.subList(0, Math.min(5, list.size()));
+    @Scheduled(cron = "0/3 * * * * ?")
+    public void download() {
+        String activeString = Aria2Json.tellActive();
+        if (!StringUtils.isEmpty(activeString)) {
+            //Aria2服务有效 使用Aria2下载
 
-        list.forEach(d -> {
-            Aria2Option aria2Option = new Aria2Option();
-            aria2Option.setDir(rootPath + "/" + d.getType())
-                    .setOut(d.getPath())
-                    .setReferer("*")
-            ;
-            Aria2Json aria2Json = new Aria2Json();
-            aria2Json.setMethod(Aria2Json.METHOD_ADD_URI)
-                    .addParam(new String[]{d.getUrl()})
-                    .addParam(aria2Option);
-            ;
-            try {
-                String send = aria2Json.send(null);
-                String path = d.getPath();
-                path = path.substring(0, path.indexOf("]") + 1);
-                log.info("添加下载 {} -> {}", path, send);
-//                removeById(d.getId());
-            } catch (IOException e) {
-                e.printStackTrace();
+            JSONArray activeArray = JSONObject.parseObject(activeString).getJSONArray("result");
+
+            ArrayList<Aria2File> activeList = Aria2File.parseArray(activeArray);
+
+            removeComplete();
+
+            int numberOfAdd = MAX_CONCURRENT_DOWNLOADS - activeList.size();
+            if (numberOfAdd > 0) {
+                List<String> downloadingList = activeList.stream().map(Aria2File::getFileName).collect(Collectors.toList());
+                downloadingFileList.forEach(f -> downloadingList.add(f.getFileName()));
+
+                QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
+                if (downloadingList.size() > 0) {
+                    qw.notIn("path", downloadingList);
+                }
+                List<DownloadingFile> list = list(qw);
+                if (list.size() == 0) {
+                    return;
+                }
+                log.info("下载队列中有 {} 个文件", list.size());
+                Collections.sort(list);
+                list = list.subList(0, Math.min(numberOfAdd, list.size()));
+                list.forEach(f -> downloadWithAria2(f, rootPath));
             }
+        }
+
+    }
+
+    /**
+     * 从数据库删除Aria2已完成的任务
+     */
+    @Scheduled(cron = "0/1 * * * * ?")
+    public void removeComplete() {
+        String stoppedString = Aria2Json.tellStopped();
+        if (StringUtils.isEmpty(stoppedString)) {
+            return;
+        }
+        JSONArray stoppedArray = JSONObject.parseObject(stoppedString).getJSONArray("result");
+        ArrayList<Aria2File> stoppedList = Aria2File.parseArray(stoppedArray);
+
+        //从停止列表移除 未正常完成的 或 非本程序添加的任务
+        stoppedList.removeIf(f -> {
+            if (!"complete".equals(f.getStatus())) {
+                return true;
+            }
+            QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
+            qw.eq("path", f.getFileName());
+            return count(qw) == 0;
         });
+
+        if (stoppedList.size() == 0) {
+            return;
+        }
+
+        QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
+        qw.in("path", stoppedList.stream().map(Aria2File::getFileName).collect(Collectors.toList()));
+        if (remove(qw)) {
+            stoppedList.forEach(f -> {
+                String s = Aria2Json.removeDownloadResult(f.getGid());
+                JSONObject json = JSONObject.parseObject(s);
+                String result = json.getString("result");
+                log.info("删除已完成任务 {} -> {}", result, f.getFileName());
+            });
+        }
+    }
+
+    /**
+     * 将文件提交Aria2下载
+     *
+     * @param downloadingFile
+     * @param rootPath
+     * @return
+     */
+    private static boolean downloadWithAria2(DownloadingFile downloadingFile, String rootPath) {
+        Aria2Option aria2Option = new Aria2Option();
+        aria2Option.setDir(rootPath + "/" + downloadingFile.getType())
+                .setOut(downloadingFile.getPath())
+                .setReferer("*")
+        ;
+        Aria2Json aria2Json = new Aria2Json(downloadingFile.getId());
+        aria2Json.setMethod(Aria2Json.METHOD_ADD_URI)
+                .addParam(new String[]{downloadingFile.getUrl()})
+                .addParam(aria2Option);
+        ;
+        String send = aria2Json.send(null);
+        if (StringUtils.isEmpty(send)) {
+            return false;
+        }
+        String path = downloadingFile.getPath();
+        path = path.substring(0, path.indexOf("]") + 1);
+        log.info("添加下载 {} -> {}", path, send);
+        return true;
     }
 
 }

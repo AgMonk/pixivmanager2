@@ -1,4 +1,4 @@
-package com.gin.pixivmanager2.test;
+package com.gin.pixivmanager2.Aria2;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
