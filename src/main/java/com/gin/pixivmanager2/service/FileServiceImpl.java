@@ -347,7 +347,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         //从数据库和Aria2删除已完成任务
         if (completeList.size() > 0) {
             QueryWrapper<DownloadingFile> qw = new QueryWrapper<>();
-            qw.in("path", completeList.stream().map(Aria2File::getFileName).collect(Collectors.toList()));
+            qw.in("url", completeList.stream().map(Aria2File::getUrl).collect(Collectors.toList()));
             if (remove(qw)) {
                 completeList.forEach(f -> {
                     String s = Aria2Json.removeDownloadResult(f.getGid());
@@ -369,9 +369,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                 if (errorCode == 3) {
                     //404错误
                     String url = f.getUrl();
+                    Aria2Json.removeDownloadResult(f.getGid());
                     if (url.contains("_p")) {
                         //删除相关url
-                        Aria2Json.removeDownloadResult(f.getGid());
                         String pid = url.substring(url.lastIndexOf("/") + 1, url.indexOf("_p"));
 
                         //更新详情
@@ -405,12 +405,16 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      * @param rootPath        下载根目录
      * @return 是否提交成功
      */
-    private static boolean downloadWithAria2(DownloadingFile downloadingFile, String rootPath) {
+    private boolean downloadWithAria2(DownloadingFile downloadingFile, String rootPath) {
         Aria2Option aria2Option = new Aria2Option();
         aria2Option.setDir(rootPath + "/" + downloadingFile.getType())
                 .setOut(downloadingFile.getPath())
                 .setReferer("*")
         ;
+        if (downloadingFile.getType().contains("fanbox")) {
+            aria2Option.addHeader("Cookie", fanboxCookie);
+        }
+
         Aria2Json aria2Json = new Aria2Json(downloadingFile.getId());
         aria2Json.setMethod(Aria2Json.METHOD_ADD_URI)
                 .addParam(new String[]{downloadingFile.getUrl()})
