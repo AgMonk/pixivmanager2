@@ -139,7 +139,10 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         //如果为null则归档全部
         pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
         //带_p的pid转为不带_p的pid并去重
-        List<String> list = pidCollection.stream().map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length())).distinct().collect(Collectors.toList());
+        List<String> list = pidCollection.stream()
+                .map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length()))
+                .distinct().collect(Collectors.toList());
+
         List<Illustration> illustrationList = illustrationService.findList(list, 0);
         Collection<String> finalPidCollection = pidCollection;
         illustrationList.forEach(i -> {

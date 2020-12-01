@@ -500,7 +500,7 @@ public class Request {
                         try {
                             Thread.sleep(10 * 1000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+//                            e.printStackTrace();
                         }
                         break;
                     case HttpStatus.SC_INTERNAL_SERVER_ERROR:
