@@ -12,6 +12,7 @@ import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.util.FilesUtil;
+import com.gin.pixivmanager2.util.GifUtil;
 import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -318,7 +319,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                 log.info("下载队列中有 {} 个文件", list.size());
                 Collections.sort(list);
                 list = list.subList(0, Math.min(numberOfAdd, list.size()));
-                list.forEach(f -> downloadWithAria2(f, rootPath));
+                list.forEach(f -> downloadWithAria2(f));
             }
         }
 
@@ -327,7 +328,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     /**
      * 从数据库和Aria2删除已完成任务
      */
-    public void removeComplete() {
+    private void removeComplete() {
         String stoppedString = Aria2Json.tellStopped();
         if (StringUtils.isEmpty(stoppedString)) {
             return;
@@ -350,6 +351,12 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             qw.in("url", completeList.stream().map(Aria2File::getUrl).collect(Collectors.toList()));
             if (remove(qw)) {
                 completeList.forEach(f -> {
+                    String url = f.getUrl();
+                    // 把zip文件打包为gif
+                    if (url.endsWith(".zip") && !url.contains("fanbox")) {
+                        gifExecutor.execute(() -> GifUtil.zip2Gif(f.getPath()));
+                    }
+
                     String s = Aria2Json.removeDownloadResult(f.getGid());
                     JSONObject json = JSONObject.parseObject(s);
                     String result = json.getString("result");
@@ -402,10 +409,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      * 将文件提交Aria2下载
      *
      * @param downloadingFile 下载队列中的文件
-     * @param rootPath        下载根目录
      * @return 是否提交成功
      */
-    private boolean downloadWithAria2(DownloadingFile downloadingFile, String rootPath) {
+    private boolean downloadWithAria2(DownloadingFile downloadingFile) {
         Aria2Option aria2Option = new Aria2Option();
         aria2Option.setDir(rootPath + "/" + downloadingFile.getType())
                 .setOut(downloadingFile.getPath())

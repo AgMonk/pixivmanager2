@@ -15,7 +15,7 @@ public class Aria2Option {
     String dir;
     String out;
     String referer;
-    String header = null;
+    String header = "";
 
     public Aria2Option addHeader(String key, String value) {
         header += key + ":" + value + "\\n";

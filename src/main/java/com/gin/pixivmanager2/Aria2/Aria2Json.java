@@ -55,7 +55,6 @@ public class Aria2Json {
     private String id = UUID.randomUUID().toString();
     private String jsonrpc = "2.0";
     private String method = METHOD_TELL_ACTIVE;
-    private String url;
     private List<Object> params = new ArrayList<>();
     //暂存下载参数
 
