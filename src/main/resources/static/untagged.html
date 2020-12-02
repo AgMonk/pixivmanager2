@@ -67,11 +67,11 @@
         <br>
     </div>
     <div v-if="width<=800">
-        <img v-for="pid in path" :src="encodeURI(fileMap[pid])" style="width: 100%">
+        <img v-for="pid in path" :src="encodeURI(fileMap[pid]).replace('#','%23')" style="width: 100%">
     </div>
 
     <div v-if="width>800">
-        <img v-for="pid in path" :src="encodeURI(fileMap[pid])"
+        <img v-for="pid in path" :src="encodeURI(fileMap[pid]).replace('#','%23')"
              :class="width > 1200 ? 'imgSmall' : width>1000?'imgMedium':'imgLarge'"
              @click.left="clickLeft(pid)"
              @click.prevent.right="clickRight(pid)">
