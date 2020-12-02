@@ -298,7 +298,7 @@ public class NgaPost {
         Request request = Request.create(attachUrl)
                 .addFormData("attachment_file" + i + "_watermark", "")
                 .addFormData("attachment_file" + i + "_dscp", "image" + i)
-                .addFormData("attachment_file" + i + "_url_utf8_name", Request.encode(file.getName(), "utf-8"))
+                .addFormData("attachment_file" + i + "_url_utf8_name", CodeUtils.encode(file.getName(), "utf-8"))
                 .addFormData("attachment_file" + i + "_img", "1")
                 .addFormData("func", "upload")
                 .addFormData("v2", "1")

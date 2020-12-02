@@ -2,6 +2,9 @@ package com.gin.pixivmanager2.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.gin.pixivmanager2.util.RequestUtils.GetRequest;
+import com.gin.pixivmanager2.util.RequestUtils.PostRequest;
+import com.gin.pixivmanager2.util.RequestUtils.RequestBase;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.*;
@@ -61,47 +64,19 @@ public class PixivPost {
         long start = System.currentTimeMillis();
         log.debug("请求作品详情{} {}", cookie == null ? "" : "(cookie)", pid);
 
-        Request request = Request
-                .create(URL_ILLUST_DETAIL + pid)
-                .setTimeOutSecond(10)
-                .setCookie(cookie).get();
-        String result = request.getResult();
+//        Request request = Request
+//                .create(URL_ILLUST_DETAIL + pid)
+//                .setTimeOutSecond(10)
+//                .setCookie(cookie).get();
+//        String result = request.getResult();
+
+        String result = GetRequest.create().addCookie(cookie).get(URL_ILLUST_DETAIL + pid);
+
         JSONObject resultJson = result == null ? null : JSONObject.parseObject(result);
         JSONObject body = resultJson == null ? null : resultJson.getJSONObject("body");
 
-
-        long end = System.currentTimeMillis();
-        log.debug("获得作品详情{} {} 耗时 {}", body != null ? "成功" : "失败", pid, Request.timeCost(start, end));
+        log.debug("获取作品详情{} {} 耗时 {}", body != null ? "成功" : "失败", pid, RequestBase.timeCost(start));
         return body;
-    }
-
-    /**
-     * 批量查询详情
-     *
-     * @param pidCollection pid集合
-     * @param cookie        cookie
-     * @param executor      线程池
-     * @param progressMap   进度对象
-     * @return 详情列表
-     */
-    public static List<JSONObject> detail(Collection<String> pidCollection, String cookie, ThreadPoolTaskExecutor executor, Map<String, Integer> progressMap) {
-        List<Callable<JSONObject>> tasks = new ArrayList<>();
-        long start = System.currentTimeMillis();
-        progressMap.put("size", pidCollection.size());
-        progressMap.put("count", 0);
-        log.info("请求作品详情 {} 个", pidCollection.size());
-        for (String pid : pidCollection) {
-            tasks.add(() -> {
-                JSONObject detail = detail(pid, cookie);
-                addProgress(progressMap);
-                return detail;
-            });
-        }
-        List<JSONObject> detail = TasksUtil.executeTasks(tasks, 60, executor, "detail", 2);
-        long end = System.currentTimeMillis();
-        detail.removeIf(Objects::isNull);
-        log.info("获得作品详情 {} 个 耗时 {}", detail.size(), Request.timeCost(start, end));
-        return detail;
     }
 
     /**
@@ -116,26 +91,42 @@ public class PixivPost {
         tags = tags.replace(",", " ");
         log.info("给作品添加tag {} -> {}", pid, tags);
 
-        Request.create(URL_TAG_ADD + pid)
-//                .setContentType(Request.CONTENT_TYPE_X_WWW_FORM_URLENCODED)
+//        Request.create(URL_TAG_ADD + pid)
+//                .setMaxTimes(1)
+//                .setTimeOutSecond(3)
+//                .setCookie(cookie)
+//                .addFormData("tt", tt)
+//                .addFormData("id", pid)
+//                .addFormData("tag", tags)
+//                .addFormData("mode", "add")
+//                .addFormData("type", "illust")
+//                .addFormData("from_sid", "")
+//                .addFormData("original_tag", "")
+//                .addFormData("original_untagged", "0")
+//                .addFormData("original_p", "1")
+//                .addFormData("original_rest", "")
+//                .addFormData("original_order", "")
+//                .addFormData("comment", "")
+//                .addFormData("restrict", "0")
+//                .post();
+        PostRequest.create()
                 .setMaxTimes(1)
-                .setTimeOutSecond(3)
-                .setCookie(cookie)
-                .addFormData("tt", tt)
-                .addFormData("id", pid)
-                .addFormData("tag", tags)
-                .addFormData("mode", "add")
-                .addFormData("type", "illust")
-                .addFormData("from_sid", "")
-                .addFormData("original_tag", "")
-                .addFormData("original_untagged", "0")
-                .addFormData("original_p", "1")
-                .addFormData("original_rest", "")
-                .addFormData("original_order", "")
-                .addFormData("comment", "")
-                .addFormData("restrict", "0")
-                .post();
-
+                .setTimeout(3)
+                .addCookie(cookie)
+                .addEntityString("tt", tt)
+                .addEntityString("id", pid)
+                .addEntityString("tag", tags)
+                .addEntityString("mode", "add")
+                .addEntityString("type", "illust")
+                .addEntityString("from_sid", "")
+                .addEntityString("original_tag", "")
+                .addEntityString("original_untagged", "0")
+                .addEntityString("original_p", "1")
+                .addEntityString("original_rest", "")
+                .addEntityString("original_order", "")
+                .addEntityString("comment", "")
+                .addEntityString("restrict", "0")
+                .post(URL_TAG_ADD + pid);
     }
 
     /**
@@ -163,8 +154,7 @@ public class PixivPost {
         }
         TasksUtil.executeTasks(tasks, 60, executor, "addTags", 2);
         completeProgress(progressMap);
-        long end = System.currentTimeMillis();
-        log.debug("添加Tag {} 个 耗时 {}", pidAndTags.size(), Request.timeCost(start, end));
+        log.debug("添加Tag {} 个 耗时 {}", pidAndTags.size(), RequestBase.timeCost(start));
     }
 
     /**
@@ -181,21 +171,27 @@ public class PixivPost {
         long start = System.currentTimeMillis();
         log.debug("请求收藏 UID={} 标签={} 第 {} 页", uid, tag, offset / limit + 1);
 
-        String result = Request.create(URL_BOOKMARKS_GET.replace("{uid}", uid))
-                .setCookie(cookie)
+//        String result = Request.create(URL_BOOKMARKS_GET.replace("{uid}", uid))
+//                .setCookie(cookie)
+//                .addParam("limit", limit)
+//                .addParam("offset", offset)
+//                .addParam("tag", tag)
+//                .addParam("lang", "zh")
+//                .addParam("rest", "show")
+//                .get().getResult();
+        String result = GetRequest.create()
+                .addCookie(cookie)
                 .addParam("limit", limit)
                 .addParam("offset", offset)
                 .addParam("tag", tag)
                 .addParam("lang", "zh")
                 .addParam("rest", "show")
-                .get().getResult();
+                .get(URL_BOOKMARKS_GET.replace("{uid}", uid));
 
         JSONObject body = getBody(result);
 
-        long end = System.currentTimeMillis();
-
         if (body != null) {
-            log.debug("获得收藏 UID={} 标签={} 第 {} 页 耗时 {} 毫秒", uid, tag, offset / limit + 1, Request.timeCost(start, end));
+            log.debug("获得收藏 UID={} 标签={} 第 {} 页 耗时 {} 毫秒", uid, tag, offset / limit + 1, RequestBase.timeCost(start));
         } else {
             log.warn("请求错误 UID={} 标签={} 第 {} 页", uid, tag, offset / limit + 1);
         }
@@ -276,14 +272,23 @@ public class PixivPost {
     public static void setTag(String cookie, String tt, String oldName, String newName) {
         log.info("修改Tag {} -> {}", oldName, newName);
 
-        Request.create(URL_TAG_SET).addFormData("mode", "mod")
-                .addFormData("tag", oldName)
-                .addFormData("new_tag", newName)
-                .addFormData("tt", tt)
+//        Request.create(URL_TAG_SET)
+//                .addFormData("mode", "mod")
+//                .addFormData("tag", oldName)
+//                .addFormData("new_tag", newName)
+//                .addFormData("tt", tt)
+//                .setMaxTimes(1)
+//                .setTimeOutSecond(3)
+//                .setCookie(cookie).post();
+        PostRequest.create()
                 .setMaxTimes(1)
-                .setTimeOutSecond(3)
-                .setCookie(cookie).post();
-
+                .setTimeout(3)
+                .addCookie(cookie)
+                .addEntityString("mode", "mod")
+                .addEntityString("tag", oldName)
+                .addEntityString("new_tag", newName)
+                .addEntityString("tt", tt)
+                .post(URL_TAG_SET);
     }
 
     /**
@@ -308,13 +313,22 @@ public class PixivPost {
         p = p == null || p < 0 ? 1 : p;
         log.info("搜索{} 关键字: {} 第 {} 页", searchTitle ? "标题" : "标签", keyword, p);
 
-        String result = Request.create(URL_ILLUST_SEARCH + Request.encode(keyword, null))
-                .setCookie(cookie)
-                .addParam("s_mode", searchTitle ? "s_tc" : "s_tag")
-                .addParam("mode", mode)
-                .addParam("p", p)
-                .get()
-                .getResult();
+        String result =
+//                Request.create(URL_ILLUST_SEARCH + CodeUtils.encode(keyword, null))
+//                .setCookie(cookie)
+//                .addParam("s_mode", searchTitle ? "s_tc" : "s_tag")
+//                .addParam("mode", mode)
+//                .addParam("p", p)
+//                .get()
+//                .getResult();
+
+                GetRequest.create()
+                        .addCookie(cookie)
+                        .addParam("s_mode", searchTitle ? "s_tc" : "s_tag")
+                        .addParam("mode", mode)
+                        .addParam("p", p)
+                        .get(URL_ILLUST_SEARCH + CodeUtils.encode(keyword, null));
+
         JSONObject body = getBody(result);
 
         if (body == null) {
@@ -380,16 +394,26 @@ public class PixivPost {
         tags = tags == null ? "" : tags.replace(",", " ");
         log.info("添加收藏 {} tags: {}", pid, tags);
 
-        String result = Request.create(URL_BOOKMARKS_ADD)
-                .setCookie(cookie)
-                .addFormData("mode", "save_illust_bookmark")
-                .addFormData("illust_id", pid)
-                .addFormData("restrict", "0")
-                .addFormData("comment", "")
-                .addFormData("tags", tags)
-                .addFormData("tt", tt)
-                .post()
-                .getResult();
+        String result =
+//                Request.create(URL_BOOKMARKS_ADD)
+//                .setCookie(cookie)
+//                .addFormData("mode", "save_illust_bookmark")
+//                .addFormData("illust_id", pid)
+//                .addFormData("restrict", "0")
+//                .addFormData("comment", "")
+//                .addFormData("tags", tags)
+//                .addFormData("tt", tt)
+//                .post()
+//                .getResult();
+                (String) PostRequest.create()
+                        .addCookie(cookie)
+                        .addEntityString("mode", "save_illust_bookmark")
+                        .addEntityString("illust_id", pid)
+                        .addEntityString("restrict", "0")
+                        .addEntityString("comment", "")
+                        .addEntityString("tags", tags)
+                        .addEntityString("tt", tt)
+                        .post(URL_BOOKMARKS_ADD);
         JSONObject body = getBody(result);
 
 

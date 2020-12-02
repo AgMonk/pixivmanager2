@@ -20,8 +20,6 @@ import org.springframework.util.StringUtils;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -235,7 +233,7 @@ public class Request {
     public Request addParam(String k, Object v) {
         log.debug("添加参数 {} ->{}", k, v);
         if (!StringUtils.isEmpty(v)) {
-            param.append("&").append(k).append("=").append(encode(String.valueOf(v), encodeEnc));
+            param.append("&").append(k).append("=").append(CodeUtils.encode(String.valueOf(v), encodeEnc));
         }
         return this;
     }
@@ -289,45 +287,6 @@ public class Request {
         HttpPost method = new HttpPost(this.url + param);
         method.setEntity(entityBuilder.build());
         return execute(method);
-    }
-
-    /**
-     * 解码
-     *
-     * @param s   待解码字符串
-     * @param enc 编码格式 默认utf nga gbk
-     * @return 解码完成字符串
-     */
-    public static String decode(String s, String enc) {
-        String encode = null;
-        enc = StringUtils.isEmpty(enc) ? "utf-8" : enc;
-        try {
-            encode = URLDecoder
-                    .decode(s, enc);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return encode;
-    }
-
-    /**
-     * 编码
-     *
-     * @param s   待编码字符串
-     * @param enc 编码格式 默认utf nga gbk
-     * @return 编码完成字符串
-     */
-    public static String encode(String s, String enc) {
-        String encode = null;
-        enc = StringUtils.isEmpty(enc) ? "utf-8" : enc;
-        try {
-            encode = URLEncoder
-                    .encode(s, enc)
-                    .replace("+", "%20");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return encode;
     }
 
 
@@ -468,8 +427,8 @@ public class Request {
         for (int i = 0; i < maxTimes; i++) {
             URI uri = method.getURI();
             try {
-                long start = System.currentTimeMillis();
                 long end;
+                long start = System.currentTimeMillis();
                 log.debug("第{}次请求 地址：{}", i + 1, uri);
                 CloseableHttpResponse response = client.execute(method);
                 int statusCode = response.getStatusLine().getStatusCode();
