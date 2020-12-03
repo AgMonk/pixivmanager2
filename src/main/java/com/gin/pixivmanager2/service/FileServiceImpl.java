@@ -296,6 +296,8 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             twitterImageDAO.updateById(image);
         }
         log.info("已保存推特图片数据");
+
+        /*todo Twitter图片数据录入 转发*/
         FilesUtils.rename(srcFile, destPath);
     }
 
