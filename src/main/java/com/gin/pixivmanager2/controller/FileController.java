@@ -1,6 +1,7 @@
 package com.gin.pixivmanager2.controller;
 
 import com.gin.pixivmanager2.entity.DownloadingFile;
+import com.gin.pixivmanager2.entity.TwitterImage;
 import com.gin.pixivmanager2.entity.response.Res;
 import com.gin.pixivmanager2.service.ConfigService;
 import com.gin.pixivmanager2.service.FileService;
@@ -8,16 +9,11 @@ import com.gin.pixivmanager2.util.SpringContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotEmpty;
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * @author bx002
@@ -43,9 +39,10 @@ public class FileController {
     @RequestMapping("archive")
     public Res<Void> archive(@NotEmpty String pid, @RequestParam(defaultValue = "未分类") String type) {
         log.info("归档: {}", pid);
-        fileService.archive(Arrays.asList(pid.split(",")), type);
+        fileService.archivePixiv(Arrays.asList(pid.split(",")), type);
         return new Res<>(200, "归档成功", null);
     }
+
 
     @RequestMapping("addRepostQueue")
     public Res<Void> addRepostQueue(@NotEmpty String pid, @RequestParam(defaultValue = "未分类") String type) {
@@ -63,7 +60,7 @@ public class FileController {
     @RequestMapping("archiveOld")
     public Res<Void> archiveOld() {
         log.info("归档旧作品");
-        fileService.archive(null, "old");
+        fileService.archivePixiv(null, "old");
         return new Res<>(200, "归档成功", null);
     }
 
@@ -102,6 +99,24 @@ public class FileController {
         }
 
         return map;
+    }
+
+    @RequestMapping("getTwitterImages")
+    public List<TwitterImage> getTwitterImages() {
+        ArrayList<TwitterImage> list = new ArrayList<>();
+        Map<String, String> twitter = getFileMap("twitter", 50);
+        twitter.forEach((k, v) -> {
+            list.add(TwitterImage.parse(v));
+        });
+        return list;
+    }
+
+
+    @RequestMapping("archiveTwitter")
+    @ResponseBody
+    public Res<Void> archiveTwitter(@RequestBody TwitterImage image) {
+        fileService.archiveTwitter(image);
+        return new Res<>(200, "归档成功", null);
     }
 
     @RequestMapping("getDownloadingFileList")

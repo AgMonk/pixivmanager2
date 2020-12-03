@@ -3,6 +3,7 @@ package com.gin.pixivmanager2.service;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
+import com.gin.pixivmanager2.entity.TwitterImage;
 
 import java.io.File;
 import java.util.Collection;
@@ -27,7 +28,7 @@ public interface FileService {
      *
      * @param pidCollection
      */
-    void archive(Collection<String> pidCollection, String type);
+    void archivePixiv(Collection<String> pidCollection, String type);
 
     void download(FanboxItem fanboxItem);
 
@@ -40,4 +41,12 @@ public interface FileService {
     List<DownloadingFile> getDownloadingFileList();
 
     void download();
+
+
+    /**
+     * 归档Twitter图片
+     *
+     * @param image
+     */
+    void archiveTwitter(TwitterImage image);
 }

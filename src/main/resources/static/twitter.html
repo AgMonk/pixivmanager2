@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
+    <meta charset="UTF-8">
+    <title>推特文件管理</title>
+    <script type="text/javascript" src="/js/vue.js"></script>
+    <script type="text/javascript" src="/js/axios.min.js"></script>
+    <script type="text/javascript" src="/js/queryString.js"></script>
+    <link rel="stylesheet" href="/static/css/tableCss.css">
+    <style type="text/css">
+        .err {
+            color: red;
+        }
+
+        input {
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div style="position: fixed">
+        <input type="text" v-model="fileList[0].tags" @keypress.enter="archive(0)"
+               @change="replace()" placeholder="tags">
+        <input type="text" v-model="fileList[0].author" @keypress.enter="archive(0)"
+               @change="replace()" placeholder="作者">
+        <br>
+        <button v-for="k in tags" @click="addTag(k)">{{k}}</button>
+    </div>
+    <a :href="fileList[0].url" target="_blank">
+        <img :src="encodeURI(fileList[0].path).replace('#','%23')"
+             style="width: 100%">
+    </a>
+</div>
+</body>
+<script>
+    const app = new Vue({
+        el: "#app",
+        data: {
+            fileList: [],
+            tags: ["少女前线", "碧蓝航线", "公主链接", "FGO"],
+        },
+        methods: {
+            replace() {
+                this.fileList[0].tags = this.fileList[0].tags.replaceAll("，", ",");
+            },
+
+            getFileMap() {
+                get("/file/getTwitterImages", null, function (res) {
+                    console.log(res)
+                    _this.fileList = res.data;
+                })
+            },
+            addTag(tag) {
+                this.fileList[0].tags += "," + tag;
+            },
+            archive(i) {
+                this.replace();
+                let img = this.fileList[i];
+                axios.post("/file/archiveTwitter", img)
+                    .then(function (res) {
+                        console.log(res.data)
+                        _this.fileList.splice(i, 1);
+                    });
+            },
+            del(i) {
+                get("/file/del", {pid: this.fileList[i].statusId, type: "twitter"}, function (res) {
+                    console.log(res.data)
+                    _this.fileList.splice(i, 1);
+                })
+            }
+        },
+        created() {
+            this.getFileMap();
+            document.onkeypress = function (e) {
+                console.log(e)
+
+                if (e.key === 'D') {
+                    //删除
+                    _this.del(0)
+                }
+
+
+            }
+        },
+    });
+    const _this = app;
+</script>
+</html>
+

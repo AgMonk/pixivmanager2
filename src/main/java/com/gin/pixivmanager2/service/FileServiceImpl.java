@@ -8,10 +8,8 @@ import com.gin.pixivmanager2.Aria2.Aria2File;
 import com.gin.pixivmanager2.Aria2.Aria2Json;
 import com.gin.pixivmanager2.Aria2.Aria2Option;
 import com.gin.pixivmanager2.dao.DownloadingFileDAO;
-import com.gin.pixivmanager2.entity.DownloadingFile;
-import com.gin.pixivmanager2.entity.FanboxItem;
-import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.entity.TaskProgress;
+import com.gin.pixivmanager2.dao.TwitterImageDAO;
+import com.gin.pixivmanager2.entity.*;
 import com.gin.pixivmanager2.util.FilesUtils;
 import com.gin.pixivmanager2.util.GifUtil;
 import com.gin.pixivmanager2.util.TasksUtil;
@@ -31,6 +29,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 @Slf4j
 @Transactional
 @Service
@@ -46,18 +45,21 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final ThreadPoolTaskExecutor gifExecutor = TasksUtil.getExecutor("gif", 1);
     private final ThreadPoolTaskExecutor requestExecutor;
     private final ProgressService progressService;
+    private final TwitterImageDAO twitterImageDAO;
+
 
     private final static int MAX_CONCURRENT_DOWNLOADS = 20;
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
-    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
+    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService, TwitterImageDAO twitterImageDAO) {
         this.downloadExecutor = downloadExecutor;
 
         this.rootPath = configService.getPath("rootPath").getValue();
         this.illustrationService = illustrationService;
         this.requestExecutor = requestExecutor;
         this.progressService = progressService;
+        this.twitterImageDAO = twitterImageDAO;
         this.archivePath = rootPath + "/archive";
         this.fanboxCookie = configService.getCookie("fanbox").getValue();
     }
@@ -136,7 +138,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      * @param type
      */
     @Override
-    public void archive(Collection<String> pidCollection, String type) {
+    public void archivePixiv(Collection<String> pidCollection, String type) {
         Map<String, File> fileMap = getFileMap(type);
         if (fileMap.size() == 0) {
             return;
@@ -145,7 +147,8 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
         //带_的pid转为不带_的pid并去重
         List<String> pidList = pidCollection.stream()
-                .map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length()))
+                .filter(s -> s.contains("_p"))
+                .map(s -> s.substring(0, s.indexOf("_p")))
                 .distinct().collect(Collectors.toList());
 
 //        List<Illustration> illustrationList = illustrationService.findList(list, 0);
@@ -219,8 +222,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
         TasksUtil.executeTasks(tasks, 60, fileExecutor, "file", 2);
 
-        archive(pidCollection, type);
-
+        archivePixiv(pidCollection, type);
     }
 
 
@@ -242,9 +244,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             }
 
             //pixiv文件
-            Matcher matcher = ILLUSTRATED_PATTERN.matcher(file.getName());
-            if (matcher.find()) {
-                String group = matcher.group();
+            Matcher illustMatcher = ILLUSTRATED_PATTERN.matcher(file.getName());
+            if (illustMatcher.find()) {
+                String group = illustMatcher.group();
                 if (map.containsKey(group)) {
                     File file2 = map.get(group);
                     if (file.length() == file2.length()) {
@@ -257,6 +259,12 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 //                if (!file.getPath().endsWith("zip")) {
                 map.put(group, file);
 //                }
+            }
+            //twitter文件
+            Matcher twitterMatcher = TwitterImage.PATTERN_STATUS_ID.matcher(file.getName());
+            if (twitterMatcher.find()) {
+                String group = twitterMatcher.group();
+                map.put(group, file);
             }
         }
     }
@@ -274,6 +282,21 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             list.add(new DownloadingFile(urlList.get(i), filePathList.get(i), type));
         }
         return list.stream();
+    }
+
+
+    @Override
+    public void archiveTwitter(TwitterImage image) {
+        File srcFile = getFileMap("twitter").get(image.getStatusId());
+        String destPath = archivePath + "/twitter/" + image.getAuthor() + "/" + image.getFileName();
+        TwitterImage twitterImage = twitterImageDAO.selectById(image.getStatusId());
+        if (twitterImage == null) {
+            twitterImageDAO.insert(image);
+        } else {
+            twitterImageDAO.updateById(image);
+        }
+        log.info("已保存推特图片数据");
+        FilesUtils.rename(srcFile, destPath);
     }
 
     /**

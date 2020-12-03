@@ -56,11 +56,14 @@ public class FilesUtils {
     public static boolean rename(File srcFile, String destPath) {
         File destFile = new File(destPath);
         File parentFile = destFile.getParentFile();
-        boolean b = false;
+        boolean b = true;
         //如果父目录不存在 创建
         if (!parentFile.exists()) {
             if ((b = parentFile.mkdirs())) {
                 log.info("创建路径: {}", parentFile.getPath());
+            } else {
+                log.warn("创建路径失败: {}", parentFile.getPath());
+
             }
         }
         //如果目标文件存在
