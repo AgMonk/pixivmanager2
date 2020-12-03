@@ -168,9 +168,9 @@ public interface RequestBase<T> {
             }
         }
 //        LOG.error("请求行 {}", getMethod().getRequestLine());
-        for (Header header : getMethod().getAllHeaders()) {
-            LOG.warn("Header {}", header);
-        }
+//        for (Header header : getMethod().getAllHeaders()) {
+//            LOG.warn("Header {}", header);
+//        }
         return null;
     }
 

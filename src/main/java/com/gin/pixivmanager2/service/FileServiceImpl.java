@@ -11,7 +11,8 @@ import com.gin.pixivmanager2.dao.DownloadingFileDAO;
 import com.gin.pixivmanager2.entity.DownloadingFile;
 import com.gin.pixivmanager2.entity.FanboxItem;
 import com.gin.pixivmanager2.entity.Illustration;
-import com.gin.pixivmanager2.util.FilesUtil;
+import com.gin.pixivmanager2.entity.TaskProgress;
+import com.gin.pixivmanager2.util.FilesUtils;
 import com.gin.pixivmanager2.util.GifUtil;
 import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -43,16 +44,20 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final IllustrationService illustrationService;
     private final ThreadPoolTaskExecutor fileExecutor = TasksUtil.getExecutor("file", 2);
     private final ThreadPoolTaskExecutor gifExecutor = TasksUtil.getExecutor("gif", 1);
-    private final ThreadPoolTaskExecutor ariaExecutor = TasksUtil.getExecutor("aria", 5);
+    private final ThreadPoolTaskExecutor requestExecutor;
+    private final ProgressService progressService;
+
     private final static int MAX_CONCURRENT_DOWNLOADS = 20;
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
-    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService) {
+    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService) {
         this.downloadExecutor = downloadExecutor;
 
         this.rootPath = configService.getPath("rootPath").getValue();
         this.illustrationService = illustrationService;
+        this.requestExecutor = requestExecutor;
+        this.progressService = progressService;
         this.archivePath = rootPath + "/archive";
         this.fanboxCookie = configService.getCookie("fanbox").getValue();
     }
@@ -138,61 +143,49 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         }
         //如果为null则归档全部
         pidCollection = pidCollection == null ? fileMap.keySet() : pidCollection;
-        //带_p的pid转为不带_p的pid并去重
-        List<String> list = pidCollection.stream()
+        //带_的pid转为不带_的pid并去重
+        List<String> pidList = pidCollection.stream()
                 .map(s -> s.substring(0, s.contains("_") ? s.indexOf("_") : s.length()))
                 .distinct().collect(Collectors.toList());
 
-        List<Illustration> illustrationList = illustrationService.findList(list, 0);
+//        List<Illustration> illustrationList = illustrationService.findList(list, 0);
+//        Collection<String> finalPidCollection = pidCollection;
+//        illustrationList.forEach(i -> {
+//            finalPidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
+//                File srcFile = fileMap.get(s);
+//                String srcFilePath = srcFile.getPath();
+//                String srcSuffix = srcFilePath.substring(srcFilePath.lastIndexOf("."));
+//                String count = s.substring(s.indexOf("_p") + 2);
+//                String destPath = archivePath + "/" + i.getIllustType()
+//                        + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
+//                destPath = destPath.substring(0, destPath.lastIndexOf(".")) + srcSuffix;
+//
+//                FilesUtils.rename(srcFile, destPath);
+//            });
+//        });
+        TaskProgress taskProgress = progressService.add("归档", pidCollection.size());
         Collection<String> finalPidCollection = pidCollection;
-        illustrationList.forEach(i -> {
-            finalPidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
-                File srcFile = fileMap.get(s);
-                String srcFilePath = srcFile.getPath();
-                String srcSuffix = srcFilePath.substring(srcFilePath.lastIndexOf("."));
-                String count = s.substring(s.indexOf("_p") + 2);
-                String destPath = archivePath + "/" + i.getIllustType()
-                        + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
-                File destFile = new File(destPath.substring(0, destPath.lastIndexOf(".")) + srcSuffix);
-
-                if (destFile.exists()) {
-                    if (destFile.length() == srcFile.length()) {
-                        if (srcFile.delete()) {
-                            log.info("目标文件存在且与源文件大小相同 删除源文件");
-                            return;
+        pidList.forEach(pid -> {
+            requestExecutor.execute(() -> {
+                List<Illustration> details = illustrationService.findList(Collections.singleton(pid), 0);
+                if (details != null && details.size() > 0) {
+                    Illustration ill = details.get(0);
+                    finalPidCollection.stream().filter(p -> p.contains(pid + "_p")).forEach(p -> {
+                        File srcFile = fileMap.get(p);
+                        String srcFilePath = srcFile.getPath();
+                        String srcSuffix = srcFilePath.substring(srcFilePath.lastIndexOf("."));
+                        String count = p.substring(p.indexOf("_p") + 2);
+                        String destPath = archivePath + "/" + ill.getIllustType()
+                                + ill.getAuthorPath() + ill.getFilePathWithBmkCount(Integer.valueOf(count));
+                        destPath = destPath.substring(0, destPath.lastIndexOf(".")) + srcSuffix;
+                        if (FilesUtils.rename(srcFile, destPath)) {
+                            taskProgress.addCount(1);
                         }
-                    } else {
-                        while (destFile.exists()) {
-                            destPath += ".bak";
-                            destFile = new File(destPath);
-                        }
-                    }
-                }
-                File parentFile = destFile.getParentFile();
-                if (!parentFile.exists()) {
-                    if (parentFile.mkdirs()) {
-                        log.info("创建路径: {}", parentFile.getPath());
-                    }
-                }
+                    });
 
-                if (srcFile.renameTo(destFile)) {
-                    log.info("归档文件 {} {}", s, destPath);
-                } else {
-                    log.info("归档失败 {} {}", s, destPath);
-                }
-
-                parentFile = srcFile.getParentFile();
-                File[] listFiles = parentFile.listFiles();
-                if (listFiles == null || listFiles.length == 0) {
-                    if (parentFile.delete()) {
-                        log.info("删除目录 {}", parentFile.getPath());
-                    } else {
-                        log.info("删除失败 {}", parentFile.getPath());
-                    }
                 }
             });
         });
-
     }
 
     /**
@@ -215,7 +208,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
             } else {
                 tasks.add(() -> {
                     try {
-                        FilesUtil.copyFile(srcFile, destFile);
+                        FilesUtils.copyFile(srcFile, destFile);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

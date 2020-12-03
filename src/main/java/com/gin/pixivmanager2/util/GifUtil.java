@@ -54,7 +54,7 @@ public class GifUtil {
             String gifFilePath = zipFilePath.replace(".zip", ".gif").replace("_p0", "_p1");
             File unZippedFile = ZipUtil.unZip(zipFilePath);
             GifUtil.images2Gif(Arrays.asList(Objects.requireNonNull(unZippedFile.listFiles())), gifFilePath, 30);
-            FilesUtil.delete(unZippedFile);
+            FilesUtils.delete(unZippedFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
