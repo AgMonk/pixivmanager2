@@ -23,6 +23,7 @@ public class TwitterImage {
     public final static Pattern PATTERN_STATUS_ID = Pattern.compile("\\d+_\\d+");
     public final static Pattern PATTERN_TAGS = Pattern.compile("\\[tags_.+?\\]");
     public final static Pattern PATTERN_AUTHOR = Pattern.compile("\\[author_.+?\\]");
+    public final static Pattern PATTERN_TITLE = Pattern.compile("\\[title.+?\\]");
 
     @TableId(value = "statusId")
     String statusId;
@@ -48,6 +49,7 @@ public class TwitterImage {
         author = author == null ? null : author.replace("[author_", "").replace("]", "");
         image.setAuthor(author);
 
+
         image.setSuffix(fileName.substring(fileName.lastIndexOf(".")));
 
         return image;
@@ -55,8 +57,8 @@ public class TwitterImage {
 
     public String getFileName() {
         String id = "[" + statusId + "]";
-        String tag = tags != null ? "[tags_" + tags + "]" : "";
-        String author = "[author_" + this.author + "]";
+        String tag = this.tags != null ? "[tags_" + tags + "]" : "";
+        String author = this.author != null ? "[author_" + this.author + "]" : "";
         return id + author + tag + suffix;
     }
 

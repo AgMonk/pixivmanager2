@@ -1,6 +1,7 @@
 package com.gin.pixivmanager2.controller;
 
 import com.gin.pixivmanager2.entity.DownloadingFile;
+import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.entity.TwitterImage;
 import com.gin.pixivmanager2.entity.response.Res;
 import com.gin.pixivmanager2.service.ConfigService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.constraints.NotEmpty;
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author bx002
@@ -106,7 +108,21 @@ public class FileController {
         ArrayList<TwitterImage> list = new ArrayList<>();
         Map<String, String> twitter = getFileMap("twitter", 50);
         twitter.forEach((k, v) -> {
-            list.add(TwitterImage.parse(v));
+            TwitterImage image = TwitterImage.parse(v);
+            String tags = image.getTags();
+            if (tags != null) {
+                String[] split = tags.split(",");
+                Map<String, String> dic = Illustration.dic;
+                for (int i = 0; i < split.length; i++) {
+                    String key = split[i].toLowerCase();
+                    if (dic.containsKey(key)) {
+                        split[i] = dic.get(key);
+                    }
+                }
+                image.setTags(Arrays.stream(split).distinct().collect(Collectors.joining(",")));
+            }
+
+            list.add(image);
         });
         return list;
     }

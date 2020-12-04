@@ -23,11 +23,14 @@
 <div id="app">
     <div style="position: fixed">
         <input type="text" v-model="fileList[0].tags" @keypress.enter="archive(0)"
-               @change="replace()" placeholder="tags">
+               @change="replace()" placeholder="tags" ref="tag">
         <input type="text" v-model="fileList[0].author" @keypress.enter="archive(0)"
                @change="replace()" placeholder="作者">
         <br>
-        <button v-for="k in tags" @click="addTag(k)">{{k}}</button>
+        <span v-for="(k,i) in tags">
+            <br v-if="i%5==0">
+            <button @click="addTag(k)">{{k}}</button>
+        </span>
     </div>
     <a :href="fileList[0].url" target="_blank">
         <img :src="encodeURI(fileList[0].path).replace('#','%23')"
@@ -40,7 +43,7 @@
         el: "#app",
         data: {
             fileList: [],
-            tags: ["R-18", "少女前线", "碧蓝航线", "公主链接", "FGO", "明日方舟"],
+            tags: ["R-18", "少女前线", "碧蓝航线", "公主链接", "FGO", "明日方舟", "cosplay"],
         },
         methods: {
             replace() {
@@ -55,6 +58,7 @@
             },
             addTag(tag) {
                 this.fileList[0].tags += "," + tag;
+                this.$refs.tag.focus();
             },
             archive(i) {
                 this.replace();

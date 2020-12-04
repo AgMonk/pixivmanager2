@@ -297,7 +297,10 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         }
         log.info("已保存推特图片数据");
 
-        /*todo Twitter图片数据录入 转发*/
+        if (!image.getTags().contains("R-18")) {
+            addRepostQueue(Collections.singleton(image.getStatusId()), "twitter");
+        }
+
         FilesUtils.rename(srcFile, destPath);
     }
 
