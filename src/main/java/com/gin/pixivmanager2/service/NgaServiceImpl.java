@@ -17,7 +17,6 @@ import static com.gin.pixivmanager2.util.PixivPost.URL_ARTWORK_PREFIX;
  * @author bx002
  */
 @Slf4j
-@Transactional
 @Service
 public class NgaServiceImpl implements NgaService {
     private final ConfigService configService;

@@ -27,7 +27,6 @@ import static com.gin.pixivmanager2.util.ListUtils.spiltList;
  * @author bx002
  */
 @Slf4j
-//@Transactional
 @Service
 public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illustration> implements IllustrationService {
     private final ThreadPoolTaskExecutor requestExecutor;

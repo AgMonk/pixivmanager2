@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 
 
 @Slf4j
-@Transactional
 @Service
 public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, DownloadingFile> implements FileService {
     public final static Pattern ILLUSTRATED_PATTERN = Pattern.compile("\\d+_p\\d+");

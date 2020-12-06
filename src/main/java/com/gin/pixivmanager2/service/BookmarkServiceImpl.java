@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
  * @author bx002
  */
 @Slf4j
-//@Transactional
 @Service
 public class BookmarkServiceImpl implements BookmarkService {
 

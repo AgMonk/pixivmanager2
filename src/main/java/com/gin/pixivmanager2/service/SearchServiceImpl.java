@@ -23,9 +23,7 @@ import static com.gin.pixivmanager2.util.ListUtils.spiltList;
  * @author bx002
  */
 @Slf4j
-@Transactional
 @Service
-
 public class SearchServiceImpl implements SearchService {
     private final String cookie;
     private List<Config> keywordList;

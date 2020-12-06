@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@Transactional
 public class FanboxServiceImpl extends ServiceImpl<FanboxItemDAO, FanboxItem> implements FanboxService {
     private final String cookie;
     private final FileService fileService;

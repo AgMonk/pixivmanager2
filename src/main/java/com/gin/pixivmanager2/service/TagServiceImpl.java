@@ -23,7 +23,6 @@ import java.util.stream.Stream;
  * @author bx002
  */
 @Slf4j
-@Transactional
 @Service
 public class TagServiceImpl extends ServiceImpl<TagDAO, Tag> implements TagService {
     private final ThreadPoolTaskExecutor requestExecutor;
