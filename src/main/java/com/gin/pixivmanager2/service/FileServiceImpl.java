@@ -349,6 +349,35 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     /**
+     * 重新下载出错文件
+     */
+    @Scheduled(cron = "0/30 * * * * ?")
+    public void fixError(){
+        Map<String, File> errorMap = getFileMap("error");
+        if (errorMap.size()==0) {
+            return;
+        }
+        List<String> pidList = errorMap.keySet().stream()
+                .map(p -> p.substring(0, p.indexOf("_"))).distinct()
+                .collect(Collectors.toList());
+
+        List<Illustration> details = illustrationService.findList(pidList, 0);
+
+        download(details,"未分类/修复");
+
+        List<String> list = details.stream().map(Illustration::getId).collect(Collectors.toList());
+
+        errorMap.forEach((k,v)->{
+            String pid = k.substring(0, k.indexOf("_"));
+            if (list.contains(pid)) {
+                if (v.delete()) {
+                    log.info("删除错误文件 {}",v);
+                }
+            }
+        });
+    }
+
+    /**
      * 从数据库和Aria2删除已完成任务
      */
     private void removeComplete() {
