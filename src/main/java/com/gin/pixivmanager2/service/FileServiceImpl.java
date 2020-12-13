@@ -378,6 +378,19 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     /**
+     * 保证未分类作品的详情存在
+     */
+    @Scheduled(cron = "2/30 * * * * ?")
+    public void getDetailsOfUntagged(){
+        Map<String, File> fileMap = getFileMap("未分类");
+        List<String> list = fileMap.keySet().stream()
+                .map(k -> k.substring(0, k.indexOf("_")))
+                .distinct()
+                .collect(Collectors.toList());
+        illustrationService.findList(list,0);
+    }
+
+    /**
      * 从数据库和Aria2删除已完成任务
      */
     private void removeComplete() {
