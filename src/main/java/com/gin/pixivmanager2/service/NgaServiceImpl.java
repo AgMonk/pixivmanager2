@@ -5,7 +5,6 @@ import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.util.NgaPost;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.util.*;
@@ -44,7 +43,7 @@ public class NgaServiceImpl implements NgaService {
         List<Illustration> details = illustrationService.findList(pidList, 0);
         details.sort(Comparator.comparing(Illustration::getId));
 
-        Map<String, File> fileMap = fileService.getFileMap("转发");
+        Map<String, File> fileMap = fileService.getFileMap("转发", null);
         Map<String, File> repostMap = new HashMap<>();
         fileMap.forEach((k, v) -> {
             if (pidCollection.contains(k)) {

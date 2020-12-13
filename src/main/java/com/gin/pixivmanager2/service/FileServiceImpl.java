@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -110,10 +109,10 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     @Override
-    public Map<String, File> getFileMap(String type) {
+    public Map<String, File> getFileMap(String type, Integer limit) {
         HashMap<String, File> map = new HashMap<>();
         log.info("获取文件列表 {}", type);
-        listFiles(new File(rootPath + "/" + type), map);
+        listFiles(new File(rootPath + "/" + type), map, limit);
         return map;
     }
 
@@ -126,7 +125,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Override
     public void del(Collection<String> pidCollection, String type) {
-        Map<String, File> fileMap = getFileMap(type);
+        Map<String, File> fileMap = getFileMap(type, null);
         pidCollection.forEach(pid -> log.info("删除 {} {}", pid, fileMap.get(pid).delete() ? "成功" : "失败"));
     }
 
@@ -138,7 +137,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Override
     public void archivePixiv(Collection<String> pidCollection, String type) {
-        Map<String, File> fileMap = getFileMap(type);
+        Map<String, File> fileMap = getFileMap(type, null);
         if (fileMap.size() == 0) {
             return;
         }
@@ -199,7 +198,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void addRepostQueue(Collection<String> pidCollection, String type) {
         List<Callable<Void>> tasks = new ArrayList<>();
-        Map<String, File> fileMap = getFileMap(type);
+        Map<String, File> fileMap = getFileMap(type, null);
         fileMap.keySet().stream().filter(pidCollection::contains).forEach(k -> {
             File srcFile = fileMap.get(k);
             String srcPath = srcFile.getPath();
@@ -225,11 +224,14 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
 
-    private static void listFiles(File file, Map<String, File> map) {
+    private static void listFiles(File file, Map<String, File> map, Integer limit) {
+        if (limit!=null && map.size()>=limit) {
+            return;
+        }
         if (file.isDirectory()) {
             //目录继续往下递归
             for (File f : Objects.requireNonNull(file.listFiles())) {
-                listFiles(f, map);
+                listFiles(f, map, limit);
             }
         } else {
             //文件 通过文件名判断来源和处理方式
@@ -286,7 +288,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     @Override
     public void archiveTwitter(TwitterImage image) {
-        File srcFile = getFileMap("twitter").get(image.getStatusId());
+        File srcFile = getFileMap("twitter", null).get(image.getStatusId());
         String destPath = archivePath + "/twitter/" + image.getAuthor() + "/" + image.getFileName();
         TwitterImage twitterImage = twitterImageDAO.selectById(image.getStatusId());
         if (twitterImage == null) {
@@ -353,7 +355,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Scheduled(cron = "0/30 * * * * ?")
     public void fixError(){
-        Map<String, File> errorMap = getFileMap("error");
+        Map<String, File> errorMap = getFileMap("error", null);
         if (errorMap.size()==0) {
             return;
         }
@@ -382,12 +384,23 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Scheduled(cron = "2/30 * * * * ?")
     public void getDetailsOfUntagged(){
-        Map<String, File> fileMap = getFileMap("未分类");
+        Map<String, File> fileMap = getFileMap("待查", 50);
         List<String> list = fileMap.keySet().stream()
                 .map(k -> k.substring(0, k.indexOf("_")))
-                .distinct()
+                .distinct().limit(30)
                 .collect(Collectors.toList());
-        illustrationService.findList(list,0);
+        List<String> details = illustrationService.findList(list, 0).stream()
+                .map(Illustration::getId).collect(Collectors.toList());
+        fileMap.keySet().stream()
+                .filter(k->{
+                    String s = k.substring(0, k.indexOf("_"));
+                    return details.contains(s);
+                })
+                .forEach(k->{
+                    File file = fileMap.get(k);
+                    String destPath = file.getPath().replace("待查", "未分类");
+                    FilesUtils.rename(file,destPath);
+                });
     }
 
     /**
@@ -463,8 +476,10 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                         }
                     }
                 } else if (errorCode == 1 || errorCode == 2) {
-                    log.info("删除出错任务并重试 {}", f.getFileName());
-                    Aria2Json.removeDownloadResult(f.getGid());
+                    if (f.getFileName().contains("_p")) {
+                        log.info("删除出错任务并重试 {}", f.getFileName());
+                        Aria2Json.removeDownloadResult(f.getGid());
+                    }
                 }
             });
         }

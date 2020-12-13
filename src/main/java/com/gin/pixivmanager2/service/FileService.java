@@ -34,7 +34,7 @@ public interface FileService {
 
     void download(List<FanboxItem> fanboxItemList);
 
-    Map<String, File> getFileMap(String type);
+    Map<String, File> getFileMap(String type, Integer limit);
 
     void addRepostQueue(Collection<String> pidCollection, String type);
 
