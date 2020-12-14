@@ -149,21 +149,6 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                 .map(s -> s.substring(0, s.indexOf("_p")))
                 .distinct().collect(Collectors.toList());
 
-//        List<Illustration> illustrationList = illustrationService.findList(list, 0);
-//        Collection<String> finalPidCollection = pidCollection;
-//        illustrationList.forEach(i -> {
-//            finalPidCollection.stream().filter(s -> s.contains(i.getId())).forEach(s -> {
-//                File srcFile = fileMap.get(s);
-//                String srcFilePath = srcFile.getPath();
-//                String srcSuffix = srcFilePath.substring(srcFilePath.lastIndexOf("."));
-//                String count = s.substring(s.indexOf("_p") + 2);
-//                String destPath = archivePath + "/" + i.getIllustType()
-//                        + i.getAuthorPath() + i.getFilePathWithBmkCount(Integer.valueOf(count));
-//                destPath = destPath.substring(0, destPath.lastIndexOf(".")) + srcSuffix;
-//
-//                FilesUtils.rename(srcFile, destPath);
-//            });
-//        });
         TaskProgress taskProgress = progressService.add("归档", pidCollection.size());
         Collection<String> finalPidCollection = pidCollection;
         pidList.forEach(pid -> {
@@ -261,11 +246,13 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
                 map.put(group, file);
 //                }
             }
-            //twitter文件
-            Matcher twitterMatcher = TwitterImage.PATTERN_STATUS_ID.matcher(file.getName());
-            if (twitterMatcher.find()) {
-                String group = twitterMatcher.group();
-                map.put(group, file);
+           else{
+                //twitter文件
+                Matcher twitterMatcher = TwitterImage.PATTERN_STATUS_ID.matcher(file.getName());
+                if (twitterMatcher.find()) {
+                    String group = twitterMatcher.group();
+                    map.put(group, file);
+                }
             }
         }
     }
