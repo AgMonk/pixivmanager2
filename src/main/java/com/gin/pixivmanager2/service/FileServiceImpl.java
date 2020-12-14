@@ -382,7 +382,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     /**
      * 保证未分类作品的详情存在
      */
-    @Scheduled(cron = "2/30 * * * * ?")
+//    @Scheduled(cron = "2/30 * * * * ?")
     public void getDetailsOfUntagged() {
         Map<String, File> fileMap = getFileMap("待查", 50);
         List<String> list = fileMap.keySet().stream()
