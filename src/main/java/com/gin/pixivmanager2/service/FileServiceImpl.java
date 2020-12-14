@@ -225,7 +225,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
 
     private static void listFiles(File file, Map<String, File> map, Integer limit) {
-        if (limit!=null && map.size()>=limit) {
+        if (limit != null && map.size() >= limit) {
             return;
         }
         if (file.isDirectory()) {
@@ -354,9 +354,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      * 重新下载出错文件
      */
     @Scheduled(cron = "0/30 * * * * ?")
-    public void fixError(){
+    public void fixError() {
         Map<String, File> errorMap = getFileMap("error", null);
-        if (errorMap.size()==0) {
+        if (errorMap.size() == 0) {
             return;
         }
         List<String> pidList = errorMap.keySet().stream()
@@ -365,15 +365,15 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
         List<Illustration> details = illustrationService.findList(pidList, 0);
 
-        download(details,"未分类/修复");
+        download(details, "未分类/修复");
 
         List<String> list = details.stream().map(Illustration::getId).collect(Collectors.toList());
 
-        errorMap.forEach((k,v)->{
+        errorMap.forEach((k, v) -> {
             String pid = k.substring(0, k.indexOf("_"));
             if (list.contains(pid)) {
                 if (v.delete()) {
-                    log.info("删除错误文件 {}",v);
+                    log.info("删除错误文件 {}", v);
                 }
             }
         });
@@ -383,7 +383,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      * 保证未分类作品的详情存在
      */
     @Scheduled(cron = "2/30 * * * * ?")
-    public void getDetailsOfUntagged(){
+    public void getDetailsOfUntagged() {
         Map<String, File> fileMap = getFileMap("待查", 50);
         List<String> list = fileMap.keySet().stream()
                 .map(k -> k.substring(0, k.indexOf("_")))
@@ -392,14 +392,24 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         List<String> details = illustrationService.findList(list, 0).stream()
                 .map(Illustration::getId).collect(Collectors.toList());
         fileMap.keySet().stream()
-                .filter(k->{
+                .filter(k -> {
                     String s = k.substring(0, k.indexOf("_"));
                     return details.contains(s);
                 })
-                .forEach(k->{
+                .forEach(k -> {
                     File file = fileMap.get(k);
                     String destPath = file.getPath().replace("待查", "未分类");
-                    FilesUtils.rename(file,destPath);
+                    FilesUtils.rename(file, destPath);
+                });
+        fileMap.keySet().stream()
+                .filter(k -> {
+                    String s = k.substring(0, k.indexOf("_"));
+                    return !details.contains(s);
+                })
+                .forEach(k -> {
+                    File file = fileMap.get(k);
+                    String destPath = file.getPath().replace("待查", "404");
+                    FilesUtils.rename(file, destPath);
                 });
     }
 
