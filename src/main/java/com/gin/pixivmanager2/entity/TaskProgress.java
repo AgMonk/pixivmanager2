@@ -1,5 +1,7 @@
 package com.gin.pixivmanager2.entity;
 
+import com.gin.pixivmanager2.service.ProgressService;
+import com.gin.pixivmanager2.util.SpringContextUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,6 +44,10 @@ public class TaskProgress {
         Integer count = progress.get("count");
         count = count == null ? i : count + i;
         progress.put("count", count);
+        if (progress.get("count").equals(progress.get("size"))) {
+            ProgressService progressService = SpringContextUtil.getBean(ProgressService.class);
+            progressService.remove(this);
+        }
     }
 
     public String getPercentSize() {
