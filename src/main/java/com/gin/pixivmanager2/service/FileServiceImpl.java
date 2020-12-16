@@ -228,6 +228,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         if (limit != null && map.size() >= limit) {
             return;
         }
+        limit = limit == null ? 1000 : Math.min(1000, limit);
         if (file.isDirectory()) {
             //目录继续往下递归
             for (File f : Objects.requireNonNull(file.listFiles())) {
