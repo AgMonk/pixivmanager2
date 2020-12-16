@@ -178,7 +178,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
 
     }
 
-        @Scheduled(cron = "0 * * * * ?")
+    @Scheduled(cron = "0 * * * * ?")
     void autoUpdate() {
         update(10);
     }
