@@ -45,7 +45,6 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final ProgressService progressService;
     private final TwitterImageDAO twitterImageDAO;
 
-    private HashMap<String,HashMap<String, File>> fileHashMap=new HashMap<>();
 
     private final static int MAX_CONCURRENT_DOWNLOADS = 20;
 
@@ -111,11 +110,10 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     @Override
     public Map<String, File> getFileMap(String type) {
-        HashMap<String, File> map = fileHashMap.getOrDefault(type,new HashMap<>());
+        HashMap<String, File> map = new HashMap<>();
+        map.size();
         log.info("获取文件列表 {}", type);
-        if (map.size()==0) {
-            listFiles(new File(rootPath + "/" + type), map);
-        }
+        listFiles(new File(rootPath + "/" + type), map);
         return map;
     }
 
