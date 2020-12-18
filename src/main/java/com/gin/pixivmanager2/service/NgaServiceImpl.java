@@ -43,7 +43,7 @@ public class NgaServiceImpl implements NgaService {
         List<Illustration> details = illustrationService.findList(pidList, 0);
         details.sort(Comparator.comparing(Illustration::getId));
 
-        Map<String, File> fileMap = fileService.getFileMap("转发", null);
+        Map<String, File> fileMap = fileService.getFileMap("转发");
         Map<String, File> repostMap = new HashMap<>();
         fileMap.forEach((k, v) -> {
             if (pidCollection.contains(k)) {

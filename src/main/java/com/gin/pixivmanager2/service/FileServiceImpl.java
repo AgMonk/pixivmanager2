@@ -45,6 +45,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final ProgressService progressService;
     private final TwitterImageDAO twitterImageDAO;
 
+    private HashMap<String,HashMap<String, File>> fileHashMap=new HashMap<>();
 
     private final static int MAX_CONCURRENT_DOWNLOADS = 20;
 
@@ -109,10 +110,12 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
     @Override
-    public Map<String, File> getFileMap(String type, Integer limit) {
-        HashMap<String, File> map = new HashMap<>();
+    public Map<String, File> getFileMap(String type) {
+        HashMap<String, File> map = fileHashMap.getOrDefault(type,new HashMap<>());
         log.info("获取文件列表 {}", type);
-        listFiles(new File(rootPath + "/" + type), map, limit);
+        if (map.size()==0) {
+            listFiles(new File(rootPath + "/" + type), map);
+        }
         return map;
     }
 
@@ -125,7 +128,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Override
     public void del(Collection<String> pidCollection, String type) {
-        Map<String, File> fileMap = getFileMap(type, null);
+        Map<String, File> fileMap = getFileMap(type);
         pidCollection.forEach(pid -> log.info("删除 {} {}", pid, fileMap.get(pid).delete() ? "成功" : "失败"));
     }
 
@@ -137,7 +140,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Override
     public void archivePixiv(Collection<String> pidCollection, String type) {
-        Map<String, File> fileMap = getFileMap(type, null);
+        Map<String, File> fileMap = getFileMap(type);
         if (fileMap.size() == 0) {
             return;
         }
@@ -183,7 +186,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Override
     public void addRepostQueue(Collection<String> pidCollection, String type) {
         List<Callable<Void>> tasks = new ArrayList<>();
-        Map<String, File> fileMap = getFileMap(type, null);
+        Map<String, File> fileMap = getFileMap(type);
         fileMap.keySet().stream().filter(pidCollection::contains).forEach(k -> {
             File srcFile = fileMap.get(k);
             String srcPath = srcFile.getPath();
@@ -209,15 +212,11 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     }
 
 
-    private static void listFiles(File file, Map<String, File> map, Integer limit) {
-        if (limit != null && map.size() >= limit) {
-            return;
-        }
-        limit = limit == null ? 1000 : Math.min(1000, limit);
+    private static void listFiles(File file, Map<String, File> map) {
         if (file.isDirectory()) {
             //目录继续往下递归
             for (File f : Objects.requireNonNull(file.listFiles())) {
-                listFiles(f, map, limit);
+                listFiles(f, map);
             }
         } else {
             //文件 通过文件名判断来源和处理方式
@@ -276,7 +275,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     @Override
     public void archiveTwitter(TwitterImage image) {
-        File srcFile = getFileMap("twitter", null).get(image.getStatusId());
+        File srcFile = getFileMap("twitter").get(image.getStatusId());
         String destPath = archivePath + "/twitter/" + image.getAuthor() + "/" + image.getFileName();
         TwitterImage twitterImage = twitterImageDAO.selectById(image.getStatusId());
         if (twitterImage == null) {
@@ -343,7 +342,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
     @Scheduled(cron = "0/30 * * * * ?")
     public void fixError() {
-        Map<String, File> errorMap = getFileMap("error", null);
+        Map<String, File> errorMap = getFileMap("error");
         if (errorMap.size() == 0) {
             return;
         }
@@ -372,7 +371,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
      */
 //    @Scheduled(cron = "2/30 * * * * ?")
     public void getDetailsOfUntagged() {
-        Map<String, File> fileMap = getFileMap("待查", 50);
+        Map<String, File> fileMap = getFileMap("待查");
         List<String> list = fileMap.keySet().stream()
                 .map(k -> k.substring(0, k.indexOf("_")))
                 .distinct().limit(30)

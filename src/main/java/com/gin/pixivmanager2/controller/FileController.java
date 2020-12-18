@@ -74,7 +74,7 @@ public class FileController {
     @RequestMapping("getFileMap")
     public Map<String, String> getFileMap(@RequestParam(defaultValue = "未分类") String type,
                                           @RequestParam(defaultValue = "50") Integer limit) {
-        Map<String, File> untagged = fileService.getFileMap(type, 1000);
+        Map<String, File> untagged = fileService.getFileMap(type);
         String rootPath = SpringContextUtil.getBean(ConfigService.class).getPath("rootPath").getValue();
         TreeMap<String, String> map = new TreeMap<>((s1, s2) -> {
             if (!s1.contains("_p") || !s2.contains("_p")) {
