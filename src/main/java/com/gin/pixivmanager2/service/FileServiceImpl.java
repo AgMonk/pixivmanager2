@@ -370,6 +370,9 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Scheduled(cron = "2/30 * * * * ?")
     public void getDetailsOfUntagged() {
         Map<String, File> fileMap = getFileMap("待查");
+        if (fileMap.size()==0) {
+            return;
+        }
         List<String> list = fileMap.keySet().stream()
                 .map(k -> k.substring(0, k.indexOf("_")))
                 .distinct().limit(30)
