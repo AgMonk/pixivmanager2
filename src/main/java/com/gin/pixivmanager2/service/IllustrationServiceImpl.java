@@ -172,6 +172,9 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         List<String> idList = list(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
         int size = idList.size();
+        if (size==0) {
+            return;
+        }
         log.info("[更新详情] 有 {} 条详情待更新  本次更新 {} 条 需要更新 {} 次", count, size, count / size);
 
         findList(idList, 0);
