@@ -42,6 +42,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final ThreadPoolTaskExecutor fileExecutor = TasksUtil.getExecutor("file", 2);
     private final ThreadPoolTaskExecutor gifExecutor = TasksUtil.getExecutor("gif", 1);
     private final ThreadPoolTaskExecutor requestExecutor;
+    private final ThreadPoolTaskExecutor queueExecutor;
     private final ProgressService progressService;
     private final TwitterImageDAO twitterImageDAO;
 
@@ -50,12 +51,13 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
-    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService, ThreadPoolTaskExecutor requestExecutor, ProgressService progressService, TwitterImageDAO twitterImageDAO) {
+    public FileServiceImpl(ThreadPoolTaskExecutor downloadExecutor, ConfigService configService, IllustrationService illustrationService, ThreadPoolTaskExecutor requestExecutor, ThreadPoolTaskExecutor queueExecutor, ProgressService progressService, TwitterImageDAO twitterImageDAO) {
         this.downloadExecutor = downloadExecutor;
 
         this.rootPath = configService.getPath("rootPath").getValue();
         this.illustrationService = illustrationService;
         this.requestExecutor = requestExecutor;
+        this.queueExecutor = queueExecutor;
         this.progressService = progressService;
         this.twitterImageDAO = twitterImageDAO;
         this.archivePath = rootPath + "/archive";
@@ -153,7 +155,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
         TaskProgress taskProgress = progressService.add("归档", pidCollection.size());
         Collection<String> finalPidCollection = pidCollection;
         pidList.forEach(pid -> {
-            requestExecutor.execute(() -> {
+            queueExecutor.execute(() -> {
                 List<Illustration> details = illustrationService.findList(Collections.singleton(pid), 0);
                 if (details != null && details.size() > 0) {
                     Illustration ill = details.get(0);
@@ -243,8 +245,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
 //                if (!file.getPath().endsWith("zip")) {
                 map.put(group, file);
 //                }
-            }
-           else{
+            } else {
                 //twitter文件
                 Matcher twitterMatcher = TwitterImage.PATTERN_STATUS_ID.matcher(file.getName());
                 if (twitterMatcher.find()) {
@@ -370,7 +371,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     @Scheduled(cron = "2/30 * * * * ?")
     public void getDetailsOfUntagged() {
         Map<String, File> fileMap = getFileMap("待查");
-        if (fileMap.size()==0) {
+        if (fileMap.size() == 0) {
             return;
         }
         List<String> list = fileMap.keySet().stream()

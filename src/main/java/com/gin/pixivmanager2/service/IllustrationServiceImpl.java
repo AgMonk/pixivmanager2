@@ -32,7 +32,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
     private final ThreadPoolTaskExecutor requestExecutor;
     private final ProgressService progressService;
     private final static long MS_OF_DAY = 24L * 60 * 60 * 1000;
-    private final static int DAY_LIMITS = 45;
+    private final static int DAY_LIMITS = 30;
 
     /**
      * 作品详情缓存
@@ -172,7 +172,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
         List<String> idList = list(queryWrapper).stream().map(Illustration::getId).collect(Collectors.toList());
 
         int size = idList.size();
-        if (size==0) {
+        if (size == 0) {
             return;
         }
         log.info("[更新详情] 有 {} 条详情待更新  本次更新 {} 条 需要更新 {} 次", count, size, count / size);
