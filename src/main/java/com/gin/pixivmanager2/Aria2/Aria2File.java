@@ -16,8 +16,8 @@ import java.util.ArrayList;
 @Data
 @NoArgsConstructor
 public class Aria2File {
-    Integer completedLength;
-    Integer totalLength;
+    Long completedLength;
+    Long totalLength;
     Integer errorCode;
     String status;
     String path;
@@ -29,9 +29,9 @@ public class Aria2File {
     }
 
     public Aria2File(JSONObject json) {
-        this.completedLength = json.getInteger("completedLength");
+        this.completedLength = json.getLong("completedLength");
+        this.totalLength = json.getLong("totalLength");
         this.errorCode = json.getInteger("errorCode");
-        this.totalLength = json.getInteger("totalLength");
         this.status = json.getString("status");
         this.gid = json.getString("gid");
         JSONObject file = json.getJSONArray("files").getJSONObject(0);
