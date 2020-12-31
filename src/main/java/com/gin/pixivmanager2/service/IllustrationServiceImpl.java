@@ -11,7 +11,6 @@ import com.gin.pixivmanager2.util.Request;
 import com.gin.pixivmanager2.util.TasksUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -181,7 +180,7 @@ public class IllustrationServiceImpl extends ServiceImpl<IllustrationDAO, Illust
 
     }
 
-    @Scheduled(cron = "0 * * * * ?")
+    //    @Scheduled(cron = "0 * * * * ?")
     void autoUpdate() {
         update(10);
     }
