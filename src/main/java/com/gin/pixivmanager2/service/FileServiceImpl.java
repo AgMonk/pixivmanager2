@@ -47,7 +47,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     private final TwitterImageDAO twitterImageDAO;
 
 
-    private final static int MAX_CONCURRENT_DOWNLOADS = 20;
+    private final static int MAX_CONCURRENT_DOWNLOADS = 30;
 
     private final List<DownloadingFile> downloadingFileList = new ArrayList<>();
 
