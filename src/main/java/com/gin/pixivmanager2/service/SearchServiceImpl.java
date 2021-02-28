@@ -68,7 +68,7 @@ public class SearchServiceImpl implements SearchService {
     }
 
 
-    @Scheduled(cron = "0 3/10 * * * ?")
+//    @Scheduled(cron = "0 3/10 * * * ?")
     @Override
     public void autoSearch() {
         IllustrationService illustrationService = SpringContextUtil.getBean(IllustrationService.class);

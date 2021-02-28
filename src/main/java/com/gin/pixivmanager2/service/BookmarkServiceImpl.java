@@ -54,7 +54,7 @@ public class BookmarkServiceImpl implements BookmarkService {
     }
 
     @Override
-    @Scheduled(cron = "0 5/10 * * * ?")
+//    @Scheduled(cron = "0 5/10 * * * ?")
     public void downloadUntaggedBookmarks() {
         List<Illustration> list = getBookmarks("未分類", 3);
         if (list.size() > 0) {

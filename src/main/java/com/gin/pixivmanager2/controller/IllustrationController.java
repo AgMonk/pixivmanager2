@@ -3,6 +3,8 @@ package com.gin.pixivmanager2.controller;
 import com.gin.pixivmanager2.entity.Illustration;
 import com.gin.pixivmanager2.service.ConfigService;
 import com.gin.pixivmanager2.service.IllustrationService;
+import com.gin.pixivmanager2.service.IllustrationServiceImpl;
+import com.gin.pixivmanager2.util.SpringContextUtil;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +27,12 @@ public class IllustrationController {
     public IllustrationController(IllustrationService illustrationService, ConfigService configService) {
         this.illustrationService = illustrationService;
         this.configService = configService;
+    }
+
+    @RequestMapping("get")
+    public Illustration get(String id) {
+        IllustrationServiceImpl service = SpringContextUtil.getBean(IllustrationServiceImpl.class);
+        return service.getById(id);
     }
 
 

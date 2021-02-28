@@ -94,7 +94,7 @@ public class TagServiceImpl extends ServiceImpl<TagDAO, Tag> implements TagServi
         requestExecutor.execute(() -> PixivPost.setTag(cookie, tt, tag.getName(), tag.getTranslation()));
     }
 
-    @Scheduled(cron = "0 0/5 * * * ?")
+//    @Scheduled(cron = "0 0/5 * * * ?")
     public void updateTagMap() {
         tagMap = new HashMap<>();
         tagFromIllusts.forEach(t -> {

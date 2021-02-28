@@ -12,6 +12,6 @@ public interface SearchService {
 
     List<Illustration> search(Collection<String> keywords, Integer start, Integer end, String mode, boolean notBmkOnly, boolean searchTitle);
 
-    @Scheduled(cron = "0 3/10 * * * ?")
+//    @Scheduled(cron = "0 3/10 * * * ?")
     void autoSearch();
 }

@@ -339,7 +339,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     /**
      * 重新下载出错文件
      */
-    @Scheduled(cron = "0/30 * * * * ?")
+//    @Scheduled(cron = "0/30 * * * * ?")
     public void fixError() {
         Map<String, File> errorMap = getFileMap("error");
         if (errorMap.size() == 0) {
@@ -368,7 +368,7 @@ public class FileServiceImpl extends ServiceImpl<DownloadingFileDAO, Downloading
     /**
      * 保证未分类作品的详情存在
      */
-    @Scheduled(cron = "2/30 * * * * ?")
+//    @Scheduled(cron = "2/30 * * * * ?")
     public void getDetailsOfUntagged() {
         Map<String, File> fileMap = getFileMap("待查");
         if (fileMap.size() == 0) {

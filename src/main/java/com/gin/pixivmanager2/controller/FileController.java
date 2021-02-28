@@ -66,7 +66,7 @@ public class FileController {
         return new Res<>(200, "归档成功", null);
     }
 
-    @Scheduled(cron = "30 0/5 * * * ?")
+//    @Scheduled(cron = "30 0/5 * * * ?")
     public void autoArchiveOld() {
         archiveOld();
     }
